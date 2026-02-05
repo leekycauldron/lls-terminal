@@ -1,0 +1,29 @@
+You are breaking a Chinese-language learning show script into visual scenes.
+
+Each scene represents a continuous visual moment — same setting, same characters on screen.
+When the setting changes or a character enters/exits, start a new scene.
+
+Script lines:
+{script_lines}
+
+Available settings:
+{settings}
+
+Available characters:
+{characters}
+
+Return a JSON array of scenes. Each scene has:
+- "prompt": a detailed visual description for image generation (describe the setting, characters, their expressions, actions, lighting, mood — in English)
+- "setting_id": the setting key from the available settings
+- "character_ids": array of character keys who appear in this scene
+- "line_ids": array of script line IDs covered by this scene
+
+Rules:
+- Every script line must be covered by exactly one scene
+- Lines in a scene must be contiguous (no gaps)
+- Prompts should be vivid and specific, suitable for an AI image generator
+- Include character visual descriptions from the character info in the prompt
+- Include setting visual details in the prompt
+- Aim for 3-8 scenes for a typical script
+
+Return JSON only: {{"scenes": [...]}}

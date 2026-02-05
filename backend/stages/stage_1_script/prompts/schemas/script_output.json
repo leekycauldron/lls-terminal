@@ -1,0 +1,18 @@
+{
+  "lines": [
+    {
+      "character_id": "思源",
+      "text_zh": "妈妈，今天晚上吃什么？",
+      "text_en": "Mom, what are we eating tonight?",
+      "text_pinyin": "Māma, jīntiān wǎnshang chī shénme?",
+      "direction": "Siyuan walks into the kitchen"
+    },
+    {
+      "character_id": "佳敏",
+      "text_zh": "我们吃饺子！",
+      "text_en": "We're having dumplings!",
+      "text_pinyin": "Wǒmen chī jiǎozi!",
+      "direction": ""
+    }
+  ]
+}

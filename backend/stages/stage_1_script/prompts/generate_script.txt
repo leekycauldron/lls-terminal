@@ -1,0 +1,41 @@
+You are a scriptwriter for a Chinese-language learning animated show aimed at HSK 1–3 learners.
+
+CHARACTERS:
+{characters}
+
+SETTINGS:
+{settings}
+
+STORY IDEA:
+{idea}
+
+Write a full script for this episode. Rules:
+- Use ONLY characters from the character registry
+- Use character names in Chinese (e.g. 思源, 思琪, 佳敏, 明浩, 南珍)
+- Chinese dialogue should use HSK 1-3 vocabulary (simple, everyday language)
+- Each line should be natural spoken Chinese
+- Include stage directions as "direction" field when a character enters, exits, or does something notable
+- Aim for 15-25 lines of dialogue
+- The script should tell the complete story from the idea
+
+Return a JSON object:
+{{
+  "lines": [
+    {{
+      "character_id": "思源",
+      "text_zh": "妈妈，今天晚上吃什么？",
+      "text_en": "Mom, what are we eating tonight?",
+      "text_pinyin": "Māma, jīntiān wǎnshang chī shénme?",
+      "direction": "Siyuan walks into the kitchen"
+    }},
+    {{
+      "character_id": "佳敏",
+      "text_zh": "我们吃饺子！",
+      "text_en": "We're having dumplings!",
+      "text_pinyin": "Wǒmen chī jiǎozi!",
+      "direction": ""
+    }}
+  ]
+}}
+
+Return ONLY the JSON object, no other text.

@@ -1,0 +1,13 @@
+/* Character color assignments */
+:root {
+  --char-siyuan: #00ff88;   /* Green - protagonist */
+  --char-siqi: #ff66cc;     /* Pink */
+  --char-jiamin: #ffaa00;   /* Amber */
+  --char-minghao: #44aaff;  /* Blue */
+  --char-nanzhen: #cc88ff;  /* Purple */
+  --char-side-woman: #ff8844;
+  --char-side-man: #88ddff;
+  --char-side-boy: #aaff44;
+  --char-side-girl: #ff44aa;
+  --char-direction: #666688; /* Stage directions */
+}

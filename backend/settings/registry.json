@@ -1,0 +1,82 @@
+{
+  "living_room": {
+    "name_zh": "客厅",
+    "name_en": "Living Room",
+    "reference": "settings/living_room/1.png"
+  },
+  "kitchen": {
+    "name_zh": "厨房",
+    "name_en": "Kitchen",
+    "reference": "settings/kitchen/1.png"
+  },
+  "dining_room": {
+    "name_zh": "餐厅",
+    "name_en": "Dining Room",
+    "reference": "settings/dining_room/1.png"
+  },
+  "siyuan_bedroom": {
+    "name_zh": "思源的房间",
+    "name_en": "Siyuan's Bedroom",
+    "reference": "settings/siyuan_bedroom/1.png"
+  },
+  "siqi_bedroom": {
+    "name_zh": "思琪的房间",
+    "name_en": "Siqi's Bedroom",
+    "reference": "settings/siqi_bedroom/1.png"
+  },
+  "bathroom": {
+    "name_zh": "卫生间",
+    "name_en": "Bathroom",
+    "reference": "settings/bathroom/1.png"
+  },
+  "hallway": {
+    "name_zh": "走廊",
+    "name_en": "Hallway",
+    "reference": "settings/hallway/1.png"
+  },
+  "front_door": {
+    "name_zh": "门口",
+    "name_en": "Front Door",
+    "reference": "settings/front_door/1.png"
+  },
+  "backyard": {
+    "name_zh": "后院",
+    "name_en": "Backyard",
+    "reference": "settings/backyard/1.png"
+  },
+  "school_classroom": {
+    "name_zh": "教室",
+    "name_en": "School Classroom",
+    "reference": "settings/school_classroom/1.png"
+  },
+  "school_hallway": {
+    "name_zh": "学校走廊",
+    "name_en": "School Hallway",
+    "reference": "settings/school_hallway/1.png"
+  },
+  "school_playground": {
+    "name_zh": "操场",
+    "name_en": "School Playground",
+    "reference": "settings/school_playground/1.png"
+  },
+  "market": {
+    "name_zh": "市场",
+    "name_en": "Market",
+    "reference": "settings/market/1.png"
+  },
+  "park": {
+    "name_zh": "公园",
+    "name_en": "Park",
+    "reference": "settings/park/1.png"
+  },
+  "bus_stop": {
+    "name_zh": "公交车站",
+    "name_en": "Bus Stop",
+    "reference": "settings/bus_stop/1.png"
+  },
+  "restaurant": {
+    "name_zh": "餐厅",
+    "name_en": "Restaurant",
+    "reference": "settings/restaurant/1.png"
+  }
+}

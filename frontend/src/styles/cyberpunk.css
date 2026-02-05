@@ -1,0 +1,88 @@
+/* Scanline overlay */
+.scanlines::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  z-index: 9999;
+}
+
+/* CRT vignette */
+.crt-vignette::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  z-index: 9998;
+}
+
+/* Glow effect for borders */
+.glow-border {
+  border: 1px solid var(--border-color);
+  box-shadow: 0 0 8px var(--border-glow), inset 0 0 8px rgba(0, 255, 136, 0.03);
+}
+
+/* Text glow */
+.glow-text {
+  text-shadow: 0 0 8px var(--border-glow);
+}
+
+/* Blinking cursor */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cursor-blink::after {
+  content: '█';
+  animation: blink 1s step-end infinite;
+  color: var(--accent);
+}
+
+/* Flicker animation for boot sequence */
+@keyframes flicker {
+  0% { opacity: 0.97; }
+  5% { opacity: 0.9; }
+  10% { opacity: 0.98; }
+  15% { opacity: 0.92; }
+  20% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+.flicker {
+  animation: flicker 0.3s ease-in-out;
+}
+
+/* Typing animation */
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+/* Pulse glow for active elements */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px var(--border-glow); }
+  50% { box-shadow: 0 0 12px var(--border-glow), 0 0 20px rgba(0, 255, 136, 0.1); }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}

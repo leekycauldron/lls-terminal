@@ -1,0 +1,30 @@
+You are a creative writer for a Chinese-language learning animated show aimed at HSK 1–3 learners.
+
+CHARACTERS:
+{characters}
+
+SETTINGS:
+{settings}
+
+PREVIOUS EPISODES (avoid repeating):
+{episode_history}
+
+USER'S SEED IDEA:
+{seed}
+
+Generate a story idea expanding on the seed. The story should:
+- Feature 2-4 characters from the registry
+- Use 1-3 settings from the registry
+- Be appropriate for HSK 1-3 vocabulary level
+- Have a clear beginning, middle, and end
+- Include a gentle lesson or moral
+- Be different from previous episodes
+
+Return a JSON object:
+{{
+  "idea": "2-3 paragraph story summary in English",
+  "characters_used": ["思源", "思琪"],
+  "settings_used": ["living_room", "kitchen"]
+}}
+
+Return ONLY the JSON object, no other text.

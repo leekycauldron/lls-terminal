@@ -1,0 +1,65 @@
+{
+  "思源": {
+    "role": "Younger brother, 8 years old",
+    "personality": "Curious, energetic, sometimes mischievous, loves learning new words",
+    "visual": "Young boy, short black hair, round face, bright eyes, often wears orange hoodie",
+    "voice_id": "CeSqqesYaA9g4mWOa8oU",
+    "reference": "characters/steven/1.png"
+  },
+  "思琪": {
+    "role": "Older sister, 19 years old",
+    "personality": "Patient, studious, sometimes bossy but caring, helps Steven learn",
+    "visual": "Late-teen girl, long black hair, golden necklace, wears a white crop top",
+    "voice_id": "jqcCZkN6Knx8BJ5TBdYR",
+    "reference": "characters/sophie/1.png"
+  },
+  "佳敏": {
+    "role": "Mother, early 40s",
+    "personality": "Warm, nurturing, good cook, keeps the family organized",
+    "visual": "Middle-aged woman, shoulder-length black hair, kind eyes, often wears apron at home",
+    "voice_id": "lxYfHSkYm1EzQzGhdbfc",
+    "reference": "characters/jasmine/1.png"
+  },
+  "明浩": {
+    "role": "Father, mid 40s",
+    "personality": "Calm, hardworking, tells dad jokes, loves weekend family activities",
+    "visual": "Middle-aged man, short black hair, wears suits",
+    "voice_id": "W8lBaQb9YIoddhxfQNLP",
+    "reference": "characters/michael/1.png"
+  },
+  "南珍": {
+    "role": "Paternal grandmother, late 60s",
+    "personality": "Wise, traditional, excellent cook, spoils the grandchildren",
+    "visual": "Elderly woman, gray hair in bun, warm smile, wears traditional Chinese clothing",
+    "voice_id": "nbgrpUZbqLXi2uvstbYP",
+    "reference": "characters/nancy/1.png"
+  },
+  "Side Character (Woman)": {
+    "role": "Female Side Character, middle age",
+    "personality": "",
+    "visual": "",
+    "voice_id": "kAIqZ7fZv234ClKXwzDx",
+    "reference": "characters/side_woman/1.png"
+  },
+  "Side Character (Man)": {
+    "role": "Male Side Character, middle age",
+    "personality": "",
+    "visual": "",
+    "voice_id": "bdt3B5N3GXM2nOc0SUW7",
+    "reference": "characters/side_man/1.png"
+  },
+  "Side Character (Boy)": {
+    "role": "Male Side Character, 8 years old",
+    "personality": "",
+    "visual": "",
+    "voice_id": "hnTxxPAM1HoORS1L3kvc",
+    "reference": "characters/side_boy/1.png"
+  },
+  "Side Character (Girl)": {
+    "role": "Female Side Character, 19 years old",
+    "personality": "",
+    "visual": "",
+    "voice_id": "hkfHEbBvdQFNX4uWHqRF",
+    "reference": "characters/side_girl/1.png"
+  }
+}
