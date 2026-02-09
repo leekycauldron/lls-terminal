@@ -24,6 +24,6 @@ Rules:
 - Prompts should be vivid and specific, suitable for an AI image generator
 - Include character visual descriptions from the character info in the prompt
 - Include setting visual details in the prompt
-- Aim for 3-8 scenes for a typical script
+- Aim for 8-15 scenes for a typical script
 
 Return JSON only: {{"scenes": [...]}}

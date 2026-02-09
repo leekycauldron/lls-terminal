@@ -2,13 +2,9 @@ import { useEffect, useState } from 'react';
 import TerminalLayout from './terminal/TerminalLayout';
 import TerminalHeader from './terminal/TerminalHeader';
 import StageRouter from './stages/StageRouter';
+import EpisodeMenu from './components/EpisodeMenu';
 import { useEpisodeStore } from './state/episodeStore';
-import {
-  listStages,
-  listEpisodes,
-  createEpisode,
-  getEpisode,
-} from './api/stages';
+import { listStages, getEpisode } from './api/stages';
 
 interface StageInfo {
   id: string;
@@ -26,30 +22,11 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-
     async function init() {
       try {
         const stageList = await listStages();
         if (cancelled) return;
         setStages(stageList);
-
-        const episodes = await listEpisodes();
-        if (cancelled) return;
-        let epId: string;
-
-        if (episodes.length > 0) {
-          const latest = episodes[episodes.length - 1];
-          epId = latest.id;
-        } else {
-          const ep = await createEpisode('Episode 1');
-          if (cancelled) return;
-          epId = ep.id;
-        }
-
-        setEpisodeId(epId);
-        const state = await getEpisode(epId);
-        if (cancelled) return;
-        setState(state);
       } catch (err: unknown) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : 'Failed to connect to server');
@@ -57,31 +34,35 @@ export default function App() {
         if (!cancelled) setLoading(false);
       }
     }
-
     init();
     return () => { cancelled = true; };
-  }, [setEpisodeId, setState]);
+  }, []);
+
+  const handleSelectEpisode = async (epId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      setEpisodeId(epId);
+      const state = await getEpisode(epId);
+      setState(state);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load episode');
+      setEpisodeId(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToMenu = () => {
+    setEpisodeId(null);
+    setState(null);
+  };
 
   const handleAdvance = () => {
     const currentOrder = stages.find((s) => s.id === currentStage)?.order ?? -1;
     const next = stages.find((s) => s.order === currentOrder + 1);
     if (next) {
       setCurrentStage(next.id);
-    }
-  };
-
-  const handleNewEpisode = async () => {
-    try {
-      setLoading(true);
-      const episodes = await listEpisodes();
-      const ep = await createEpisode(`Episode ${episodes.length + 1}`);
-      setEpisodeId(ep.id);
-      const state = await getEpisode(ep.id);
-      setState(state);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create episode');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -101,44 +82,51 @@ export default function App() {
     );
   }
 
+  const showMenu = !loading && !episodeId;
+
   return (
     <TerminalLayout
       header={
         <TerminalHeader
           stages={stages}
-          currentStage={currentStage}
+          currentStage={episodeId ? currentStage : ''}
           episodeId={episodeId}
+          onStageClick={(stageId) => setCurrentStage(stageId)}
         />
       }
       footer={
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            padding: '4px 16px',
-            background: 'var(--bg-secondary)',
-            borderTop: '1px solid var(--border-color)',
-            fontSize: 11,
-          }}
-        >
-          <button
-            onClick={handleNewEpisode}
+        episodeId ? (
+          <div
             style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-dim)',
-              fontFamily: 'var(--font-mono)',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              padding: '4px 16px',
+              background: 'var(--bg-secondary)',
+              borderTop: '1px solid var(--border-color)',
               fontSize: 11,
-              cursor: 'pointer',
             }}
           >
-            [new episode]
-          </button>
-        </div>
+            <button
+              onClick={handleBackToMenu}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-dim)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                cursor: 'pointer',
+              }}
+            >
+              [episodes]
+            </button>
+          </div>
+        ) : undefined
       }
     >
       {loading ? (
         <div style={{ color: 'var(--text-dim)' }}>Connecting...</div>
+      ) : showMenu ? (
+        <EpisodeMenu onSelect={handleSelectEpisode} />
       ) : episodeId ? (
         <StageRouter
           currentStage={currentStage}

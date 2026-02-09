@@ -8,8 +8,10 @@ interface TimelineClipProps {
   episodeId: string;
   pixelsPerSecond: number;
   label: string;
+  selected?: boolean;
   onMove: (clipId: string, newStartMs: number) => void;
   onResize: (clipId: string, newDurationMs: number) => void;
+  onSelect?: (clipId: string) => void;
 }
 
 export default function TimelineClipComponent({
@@ -17,11 +19,14 @@ export default function TimelineClipComponent({
   episodeId,
   pixelsPerSecond,
   label,
+  selected = false,
   onMove,
   onResize,
+  onSelect,
 }: TimelineClipProps) {
   const dragRef = useRef<{ startX: number; startMs: number } | null>(null);
   const resizeRef = useRef<{ startX: number; startDuration: number } | null>(null);
+  const didDrag = useRef(false);
 
   const left = (clip.start_ms / 1000) * pixelsPerSecond;
   const width = Math.max((clip.duration_ms / 1000) * pixelsPerSecond, 20);
@@ -32,11 +37,13 @@ export default function TimelineClipComponent({
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
+      didDrag.current = false;
       dragRef.current = { startX: e.clientX, startMs: clip.start_ms };
 
       const handleMouseMove = (ev: MouseEvent) => {
         if (!dragRef.current) return;
         const dx = ev.clientX - dragRef.current.startX;
+        if (Math.abs(dx) > 3) didDrag.current = true;
         const dMs = (dx / pixelsPerSecond) * 1000;
         const newStart = Math.max(0, Math.round(dragRef.current.startMs + dMs));
         onMove(clip.id, newStart);
@@ -46,12 +53,15 @@ export default function TimelineClipComponent({
         dragRef.current = null;
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        if (!didDrag.current && onSelect && isScene) {
+          onSelect(clip.id);
+        }
       };
 
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [clip.id, clip.start_ms, pixelsPerSecond, onMove]
+    [clip.id, clip.start_ms, pixelsPerSecond, onMove, onSelect, isScene]
   );
 
   const handleResizeMouseDown = useCallback(
@@ -80,6 +90,8 @@ export default function TimelineClipComponent({
     [clip.id, clip.duration_ms, pixelsPerSecond, onResize]
   );
 
+  const hasZoom = isScene && (clip.zoom_start !== 1.0 || clip.zoom_end !== 1.0);
+
   return (
     <div
       onMouseDown={handleMouseDown}
@@ -99,6 +111,8 @@ export default function TimelineClipComponent({
         gap: 4,
         padding: '0 4px',
         userSelect: 'none',
+        outline: selected ? '2px solid #fff' : 'none',
+        outlineOffset: -1,
       }}
       title={`${label} | ${(clip.start_ms / 1000).toFixed(1)}s - ${((clip.start_ms + clip.duration_ms) / 1000).toFixed(1)}s`}
     >
@@ -123,6 +137,23 @@ export default function TimelineClipComponent({
       >
         {label}
       </span>
+
+      {/* Zoom badge for scene clips */}
+      {hasZoom && (
+        <span
+          style={{
+            fontSize: 8,
+            color: '#000',
+            background: 'rgba(255,255,255,0.5)',
+            borderRadius: 2,
+            padding: '1px 3px',
+            flexShrink: 0,
+            marginLeft: 'auto',
+          }}
+        >
+          Z
+        </span>
+      )}
 
       {/* Resize handle (only for scene clips) */}
       {isScene && (

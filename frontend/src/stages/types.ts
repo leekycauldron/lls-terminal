@@ -48,6 +48,7 @@ export interface TTSLineStatus {
 export interface TTSData {
   line_statuses: TTSLineStatus[];
   mode: string;
+  speed: number;
   approved: boolean;
 }
 
@@ -77,6 +78,8 @@ export interface TimelineClip {
   start_ms: number;
   duration_ms: number;
   order: number;
+  zoom_start: number;
+  zoom_end: number;
 }
 
 export interface TimelineData {
@@ -86,14 +89,23 @@ export interface TimelineData {
   approved: boolean;
 }
 
+export interface ThumbnailData {
+  prompt: string;
+  image_file: string;
+  generated: boolean;
+  approved: boolean;
+}
+
 export interface EpisodeState {
   id: string;
   current_stage: string;
+  art_style: string;
   context: ContextData;
   script: ScriptData;
   tts: TTSData;
   scenes: ScenesData;
   timeline: TimelineData;
+  thumbnail: ThumbnailData;
 }
 
 export interface StageComponentProps {

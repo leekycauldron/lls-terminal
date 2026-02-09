@@ -6,10 +6,11 @@ import {
   updateScenes,
   deleteScene,
   generateSceneImage,
-  generateAllSceneImages,
   revertSceneImage,
   setScenesMode,
   approveScenes,
+  setArtStyle,
+  unapproveStage,
 } from '../../api/stages';
 import { registerStage } from '../stageRegistry';
 import SceneEditor from './SceneEditor';
@@ -26,6 +27,7 @@ function ScenesStage({ episodeId }: StageComponentProps) {
     updateScene,
     setScenesApproved,
     setCurrentStage,
+    setArtStyle: setStoreArtStyle,
   } = useEpisodeStore();
 
   const scenesData = state?.scenes;
@@ -42,6 +44,20 @@ function ScenesStage({ episodeId }: StageComponentProps) {
   const [phase, setPhase] = useState<Phase>(initialPhase);
   const [error, setError] = useState<string | null>(null);
   const [generatingSceneId, setGeneratingSceneId] = useState<string | null>(null);
+  const [artStyleLocal, setArtStyleLocal] = useState(state?.art_style || '');
+  const [artStyleSaving, setArtStyleSaving] = useState(false);
+
+  const handleSaveArtStyle = async () => {
+    setArtStyleSaving(true);
+    try {
+      await setArtStyle(episodeId, artStyleLocal);
+      setStoreArtStyle(artStyleLocal);
+    } catch {
+      // silent
+    } finally {
+      setArtStyleSaving(false);
+    }
+  };
 
   const generatedCount = scenes.filter((s) => s.generated).length;
   const allGenerated = generatedCount === scenes.length && scenes.length > 0;
@@ -94,11 +110,17 @@ function ScenesStage({ episodeId }: StageComponentProps) {
     setPhase('generating-all');
     setError(null);
     try {
-      const results = await generateAllSceneImages(episodeId);
-      setScenes(results);
+      const ungenerated = scenes.filter((s) => !s.generated);
+      for (const scene of ungenerated) {
+        setGeneratingSceneId(scene.id);
+        const result = await generateSceneImage(episodeId, scene.id);
+        updateScene(scene.id, { image_file: result.image_file, generated: true });
+      }
+      setGeneratingSceneId(null);
       setPhase('editing');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Auto image generation failed');
+      setGeneratingSceneId(null);
       setPhase('editing');
     }
   };
@@ -184,13 +206,51 @@ function ScenesStage({ episodeId }: StageComponentProps) {
 
       {phase === 'generating-all' && (
         <ProgressBar
-          label={`Auto-generating images... ${generatedCount}/${scenes.length}`}
+          label={`Generating image ${generatedCount + 1}/${scenes.length}...`}
           progress={scenes.length ? (generatedCount / scenes.length) * 100 : 0}
         />
       )}
 
       {phase === 'editing' && (
         <>
+          {/* Art style input */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 12,
+              padding: 8,
+              border: '1px solid var(--border-color)',
+              borderRadius: 2,
+              background: 'var(--bg-secondary)',
+            }}
+          >
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', flexShrink: 0 }}>
+              Art style:
+            </span>
+            <input
+              value={artStyleLocal}
+              onChange={(e) => setArtStyleLocal(e.target.value)}
+              onBlur={handleSaveArtStyle}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveArtStyle(); }}
+              placeholder="e.g. Studio Ghibli watercolor, Pixar 3D, flat vector, oil painting..."
+              style={{
+                flex: 1,
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                padding: '4px 8px',
+                borderRadius: 2,
+              }}
+            />
+            {artStyleSaving && (
+              <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>saving...</span>
+            )}
+          </div>
+
           <SceneLineOverlay scenes={scenes} lines={lines} />
 
           <div
@@ -243,6 +303,17 @@ function ScenesStage({ episodeId }: StageComponentProps) {
       {phase === 'done' && (
         <div style={{ color: 'var(--text-secondary)' }}>
           Scenes approved. {scenes.length} scenes with images finalized.
+          <button
+            onClick={async () => {
+              await unapproveStage(episodeId, 'stage_3_scenes');
+              setScenesApproved(false);
+              setCurrentStage('stage_3_scenes');
+              setPhase('editing');
+            }}
+            style={{ ...btnStyle, marginLeft: 16, borderColor: 'var(--text-dim)', color: 'var(--text-dim)' }}
+          >
+            [unlock]
+          </button>
         </div>
       )}
     </div>

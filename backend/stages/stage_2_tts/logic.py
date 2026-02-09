@@ -38,7 +38,7 @@ def generate_line_tts(state: EpisodeState, line_id: str) -> TTSLineStatus:
     audio_file = f"audio/line_{line_id}.mp3"
     output_path = ep_dir / audio_file
 
-    duration_ms = generate_tts(voice_id, line.text_zh, output_path)
+    duration_ms = generate_tts(voice_id, line.text_zh, output_path, speed=state.tts.speed)
 
     return TTSLineStatus(
         line_id=line_id,

@@ -9,6 +9,7 @@ import {
   addLine,
   deleteLine,
   approveScript,
+  unapproveStage,
 } from '../../api/stages';
 import { registerStage } from '../stageRegistry';
 import SeedInput from './SeedInput';
@@ -276,6 +277,17 @@ function ScriptStage({ episodeId }: StageComponentProps) {
       {phase === 'done' && (
         <div style={{ color: 'var(--text-secondary)' }}>
           ✓ Script approved and locked. {lines.length} lines finalized.
+          <button
+            onClick={async () => {
+              await unapproveStage(episodeId, 'stage_1_script');
+              setScriptApproved(false);
+              setCurrentStage('stage_1_script');
+              setPhase('editing');
+            }}
+            style={{ ...btnSecondary, marginLeft: 16 }}
+          >
+            [unlock]
+          </button>
         </div>
       )}
     </div>

@@ -6,10 +6,12 @@ import {
   updateTimelineClips,
   exportTimeline,
   approveTimeline,
+  unapproveStage,
 } from '../../api/stages';
 import { registerStage } from '../stageRegistry';
 import Timeline from './Timeline';
 import ExportButton from './ExportButton';
+import VideoPreview from './VideoPreview';
 import ProgressBar from '../../components/ProgressBar';
 
 type Phase = 'initializing' | 'editing' | 'exporting' | 'done';
@@ -38,6 +40,7 @@ function StitchStage({ episodeId }: StageComponentProps) {
   const [phase, setPhase] = useState<Phase>(initialPhase);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
 
   useEffect(() => {
     if (phase === 'initializing') {
@@ -68,6 +71,15 @@ function StitchStage({ episodeId }: StageComponentProps) {
     },
     [updateClip]
   );
+
+  const handleClipSelect = useCallback(
+    (clipId: string) => {
+      setSelectedClipId((prev) => (prev === clipId ? null : clipId));
+    },
+    []
+  );
+
+  const selectedClip = clips.find((c) => c.id === selectedClipId && c.track === 'scenes');
 
   // Save clips to backend on blur / periodic
   const handleSaveClips = async () => {
@@ -142,7 +154,63 @@ function StitchStage({ episodeId }: StageComponentProps) {
             onResize={(clipId, durationMs) => {
               handleResize(clipId, durationMs);
             }}
+            onClipSelect={handleClipSelect}
+            selectedClipId={selectedClipId}
           />
+
+          {/* Zoom editor for selected scene clip */}
+          {selectedClip && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: 12,
+                border: '1px solid var(--border-color)',
+                borderRadius: 2,
+                background: 'var(--bg-secondary)',
+              }}
+            >
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8 }}>
+                Zoom Settings — {scenes.find((s) => s.id === selectedClip.source_id)
+                  ? `Scene ${scenes.find((s) => s.id === selectedClip.source_id)!.order + 1}`
+                  : selectedClip.source_id}
+              </div>
+              <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+                <label style={{ fontSize: 12, color: 'var(--text-primary)' }}>
+                  Start: {selectedClip.zoom_start.toFixed(2)}x
+                  <input
+                    type="range"
+                    min={1.0}
+                    max={2.0}
+                    step={0.05}
+                    value={selectedClip.zoom_start}
+                    onChange={(e) =>
+                      updateClip(selectedClip.id, { zoom_start: parseFloat(e.target.value) })
+                    }
+                    style={{ display: 'block', width: 160, marginTop: 4 }}
+                  />
+                </label>
+                <label style={{ fontSize: 12, color: 'var(--text-primary)' }}>
+                  End: {selectedClip.zoom_end.toFixed(2)}x
+                  <input
+                    type="range"
+                    min={1.0}
+                    max={2.0}
+                    step={0.05}
+                    value={selectedClip.zoom_end}
+                    onChange={(e) =>
+                      updateClip(selectedClip.id, { zoom_end: parseFloat(e.target.value) })
+                    }
+                    style={{ display: 'block', width: 160, marginTop: 4 }}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Video preview */}
+          {timeline?.output_file && (
+            <VideoPreview episodeId={episodeId} outputFile={timeline.output_file} />
+          )}
 
           <div
             style={{
@@ -168,7 +236,7 @@ function StitchStage({ episodeId }: StageComponentProps) {
               </button>
               {timeline?.output_file && (
                 <button onClick={handleApprove} style={btnStyle}>
-                  Approve & Finish →
+                  Approve & Continue →
                 </button>
               )}
             </div>
@@ -178,7 +246,18 @@ function StitchStage({ episodeId }: StageComponentProps) {
 
       {phase === 'done' && (
         <div style={{ color: 'var(--text-secondary)' }}>
-          Episode complete! Video exported and approved.
+          Timeline approved. Proceeding to thumbnail generation.
+          <button
+            onClick={async () => {
+              await unapproveStage(episodeId, 'stage_4_stitch');
+              setTimelineData({ ...timeline!, approved: false });
+              setCurrentStage('stage_4_stitch');
+              setPhase('editing');
+            }}
+            style={{ ...btnStyle, marginLeft: 16, borderColor: 'var(--text-dim)', color: 'var(--text-dim)' }}
+          >
+            [unlock]
+          </button>
         </div>
       )}
     </div>

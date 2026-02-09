@@ -4,13 +4,14 @@ import { useEpisodeStore } from '../../state/episodeStore';
 import {
   initializeTTS,
   generateTTSLine,
-  generateAllTTS,
   revertTTSLine,
   setTTSMode,
+  setTTSSpeed,
   updateTTSLines,
   addTTSLine,
   deleteTTSLine,
   approveTTS,
+  unapproveStage,
 } from '../../api/stages';
 import { registerStage } from '../stageRegistry';
 import LineEditor from '../stage1-script/LineEditor';
@@ -101,16 +102,23 @@ function TTSStage({ episodeId }: StageComponentProps) {
     setPhase('generating');
     setError(null);
     try {
-      const results = await generateAllTTS(episodeId);
-      for (const r of results) {
-        setTTSLineStatus(r.line_id, r);
+      const ungenerated = lines.filter((l) => {
+        const s = tts?.line_statuses.find((ls) => ls.line_id === l.id);
+        return !s?.generated;
+      });
+      for (const line of ungenerated) {
+        setGeneratingLineId(line.id);
+        const result = await generateTTSLine(episodeId, line.id);
+        setTTSLineStatus(line.id, result);
       }
+      setGeneratingLineId(null);
       setPhase('editing');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Auto TTS generation failed');
+      setGeneratingLineId(null);
       setPhase('editing');
     }
-  }, [episodeId, setTTSLineStatus]);
+  }, [episodeId, lines, tts?.line_statuses, setTTSLineStatus]);
 
   const handleRevert = useCallback(
     async (lineId: string) => {
@@ -283,7 +291,7 @@ function TTSStage({ episodeId }: StageComponentProps) {
 
       {phase === 'generating' && (
         <ProgressBar
-          label={`Auto-generating TTS... ${generatedCount}/${totalCount}`}
+          label={`Generating TTS ${generatedCount + 1}/${totalCount}...`}
           progress={(generatedCount / totalCount) * 100}
         />
       )}
@@ -295,8 +303,13 @@ function TTSStage({ episodeId }: StageComponentProps) {
             generated={generatedCount}
             total={totalCount}
             allGenerated={allGenerated}
+            speed={tts?.speed ?? 1.0}
             onToggleMode={handleToggleMode}
             onApprove={handleApprove}
+            onSpeedChange={async (speed) => {
+              setTTSData({ ...tts!, speed });
+              await setTTSSpeed(episodeId, speed);
+            }}
             generating={!!generatingLineId || phase === 'generating'}
           />
           <LineEditor
@@ -315,6 +328,17 @@ function TTSStage({ episodeId }: StageComponentProps) {
       {phase === 'done' && (
         <div style={{ color: 'var(--text-secondary)' }}>
           TTS approved. {generatedCount} audio files generated.
+          <button
+            onClick={async () => {
+              await unapproveStage(episodeId, 'stage_2_tts');
+              setTTSApproved(false);
+              setCurrentStage('stage_2_tts');
+              setPhase('editing');
+            }}
+            style={{ ...genBtnStyle, marginLeft: 16, borderColor: 'var(--text-dim)', color: 'var(--text-dim)' }}
+          >
+            [unlock]
+          </button>
         </div>
       )}
     </div>

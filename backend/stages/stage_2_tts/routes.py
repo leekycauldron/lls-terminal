@@ -151,6 +151,18 @@ async def set_mode(ep_id: str, req: ModeRequest):
     return {"mode": state.tts.mode}
 
 
+class SpeedRequest(BaseModel):
+    speed: float
+
+
+@router.put("/speed")
+async def set_speed(ep_id: str, req: SpeedRequest):
+    state = _load_state(ep_id)
+    state.tts.speed = max(0.25, min(4.0, req.speed))
+    _save_state(ep_id, state)
+    return {"speed": state.tts.speed}
+
+
 @router.put("/lines")
 async def update_lines(ep_id: str, lines: list[ScriptLine]):
     state = _load_state(ep_id)

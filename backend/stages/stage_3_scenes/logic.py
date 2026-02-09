@@ -43,7 +43,7 @@ def generate_scene_breakdown(state: EpisodeState) -> list[Scene]:
     result = generate_json(
         system="You are a scene breakdown specialist for a Chinese learning show. Return JSON only.",
         user=prompt,
-        max_tokens=4096,
+        max_tokens=8192,
     )
 
     scenes = []
@@ -84,8 +84,13 @@ def generate_single_scene_image(state: EpisodeState, scene: Scene) -> str:
             if ref_path.exists():
                 char_refs.append(str(ref_path))
 
+    # Append art style to prompt if set
+    prompt = scene.prompt
+    if state.art_style:
+        prompt = f"{prompt}\n\nArt style: {state.art_style}"
+
     generate_scene_image(
-        prompt=scene.prompt,
+        prompt=prompt,
         setting_reference=setting_ref,
         character_references=char_refs if char_refs else None,
         output_path=output_path,

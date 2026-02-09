@@ -11,6 +11,8 @@ interface TimelineProps {
   lines: ScriptLine[];
   onMove: (clipId: string, newStartMs: number) => void;
   onResize: (clipId: string, newDurationMs: number) => void;
+  onClipSelect?: (clipId: string) => void;
+  selectedClipId?: string | null;
 }
 
 export default function Timeline({
@@ -21,6 +23,8 @@ export default function Timeline({
   lines,
   onMove,
   onResize,
+  onClipSelect,
+  selectedClipId,
 }: TimelineProps) {
   const [pixelsPerSecond, setPixelsPerSecond] = useState(30);
 
@@ -78,6 +82,8 @@ export default function Timeline({
           getClipLabel={getSceneLabel}
           onMove={onMove}
           onResize={onResize}
+          onClipSelect={onClipSelect}
+          selectedClipId={selectedClipId}
         />
         <TimelineTrack
           label="Audio"

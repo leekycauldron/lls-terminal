@@ -58,6 +58,20 @@ def build_video(clips: list[dict], episode_dir: Path) -> Path:
 
         seg_path = episode_dir / f"_seg_{i}.mp4"
         duration_s = sc["duration_ms"] / 1000.0
+        fps = 24
+        frames = int(duration_s * fps)
+
+        z_start = sc.get("zoom_start", 1.0)
+        z_end = sc.get("zoom_end", 1.3)
+
+        # Scale input to a large canvas, then apply zoompan for Ken Burns effect
+        # Use high resolution + trunc() to avoid sub-pixel jitter
+        vf = (
+            f"scale=7680:4320,zoompan="
+            f"z='({z_start})+({z_end}-{z_start})*(on/{frames})':"
+            f"x='trunc(iw/2-(iw/zoom/2))':y='trunc(ih/2-(ih/zoom/2))':"
+            f"d={frames}:s=1920x1080:fps={fps}"
+        )
 
         subprocess.run(
             [
@@ -67,8 +81,7 @@ def build_video(clips: list[dict], episode_dir: Path) -> Path:
                 "-c:v", "libx264",
                 "-t", f"{duration_s:.3f}",
                 "-pix_fmt", "yuv420p",
-                "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2",
-                "-r", "24",
+                "-vf", vf,
                 str(seg_path),
             ],
             check=True,

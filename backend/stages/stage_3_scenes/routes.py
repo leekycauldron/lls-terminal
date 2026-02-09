@@ -126,6 +126,18 @@ async def revert_image(ep_id: str, scene_id: str):
     return {"reverted": True, "scene_id": scene_id}
 
 
+class ArtStyleRequest(BaseModel):
+    art_style: str
+
+
+@router.put("/art-style")
+async def set_art_style(ep_id: str, req: ArtStyleRequest):
+    state = _load_state(ep_id)
+    state.art_style = req.art_style
+    _save_state(ep_id, state)
+    return {"art_style": state.art_style}
+
+
 class ModeRequest(BaseModel):
     mode: str
 

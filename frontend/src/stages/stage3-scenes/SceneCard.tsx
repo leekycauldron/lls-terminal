@@ -48,14 +48,14 @@ export default function SceneCard({
       {scene.generated && scene.image_file && (
         <div style={{ marginBottom: 8 }}>
           <img
-            src={`${STATIC_BASE}/${episodeId}/${scene.image_file}`}
+            src={`${STATIC_BASE}/${episodeId}/${scene.image_file}?t=${Date.now()}`}
             alt={`Scene ${scene.order + 1}`}
             style={{
               width: '100%',
-              maxHeight: 200,
-              objectFit: 'cover',
+              objectFit: 'contain',
               borderRadius: 2,
               border: '1px solid var(--border-color)',
+              background: '#000',
             }}
           />
         </div>

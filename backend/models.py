@@ -44,6 +44,7 @@ class TTSLineStatus(BaseModel):
 class TTSData(BaseModel):
     line_statuses: list[TTSLineStatus] = []
     mode: str = "manual"
+    speed: float = 1.0
     approved: bool = False
 
 
@@ -73,6 +74,8 @@ class TimelineClip(BaseModel):
     start_ms: int = 0
     duration_ms: int = 0
     order: int = 0
+    zoom_start: float = 1.0
+    zoom_end: float = 1.3
 
 
 class TimelineData(BaseModel):
@@ -82,11 +85,20 @@ class TimelineData(BaseModel):
     approved: bool = False
 
 
+class ThumbnailData(BaseModel):
+    prompt: str = ""
+    image_file: str = ""
+    generated: bool = False
+    approved: bool = False
+
+
 class EpisodeState(BaseModel):
     id: str
     current_stage: str = "stage_0_context"
+    art_style: str = ""
     context: ContextData = Field(default_factory=ContextData)
     script: ScriptData = Field(default_factory=ScriptData)
     tts: TTSData = Field(default_factory=TTSData)
     scenes: ScenesData = Field(default_factory=ScenesData)
     timeline: TimelineData = Field(default_factory=TimelineData)
+    thumbnail: ThumbnailData = Field(default_factory=ThumbnailData)

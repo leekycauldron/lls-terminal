@@ -1,4 +1,5 @@
 import json
+import shutil
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -108,3 +109,52 @@ async def get_episode(ep_id: str):
     if not state_path.exists():
         raise HTTPException(404, f"Episode {ep_id} not found")
     return json.loads(state_path.read_text())
+
+
+@app.delete("/api/episodes/{ep_id}")
+async def delete_episode(ep_id: str):
+    registry_path = EPISODES_DIR / "registry.json"
+    registry: list[dict] = json.loads(registry_path.read_text()) if registry_path.exists() else []
+
+    if not any(ep["id"] == ep_id for ep in registry):
+        raise HTTPException(404, f"Episode {ep_id} not found")
+
+    registry = [ep for ep in registry if ep["id"] != ep_id]
+    registry_path.write_text(json.dumps(registry, indent=2))
+
+    ep_dir = EPISODES_DIR / ep_id
+    if ep_dir.exists():
+        shutil.rmtree(ep_dir)
+
+    return {"deleted": ep_id}
+
+
+STAGE_TO_FIELD = {
+    "stage_1_script": "script",
+    "stage_2_tts": "tts",
+    "stage_3_scenes": "scenes",
+    "stage_4_stitch": "timeline",
+    "stage_5_thumbnail": "thumbnail",
+}
+
+
+class UnapproveRequest(BaseModel):
+    stage: str
+
+
+@app.post("/api/episodes/{ep_id}/unapprove")
+async def unapprove_stage(ep_id: str, req: UnapproveRequest):
+    field = STAGE_TO_FIELD.get(req.stage)
+    if not field:
+        raise HTTPException(400, f"Unknown stage: {req.stage}")
+
+    state_path = EPISODES_DIR / ep_id / "state.json"
+    if not state_path.exists():
+        raise HTTPException(404, f"Episode {ep_id} not found")
+
+    data = json.loads(state_path.read_text())
+    data[field]["approved"] = False
+    data["current_stage"] = req.stage
+    state_path.write_text(json.dumps(data, indent=2))
+
+    return {"stage": req.stage, "approved": False}

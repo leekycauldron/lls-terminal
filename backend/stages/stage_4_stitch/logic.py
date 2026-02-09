@@ -32,6 +32,8 @@ def initialize_timeline(state: EpisodeState) -> list[TimelineClip]:
             start_ms=current_ms,
             duration_ms=scene_duration,
             order=scene_order,
+            zoom_start=1.0,
+            zoom_end=1.3,
         ))
         scene_order += 1
         current_ms += scene_duration

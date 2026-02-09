@@ -104,6 +104,6 @@ async def approve(ep_id: str):
         raise HTTPException(400, "Must export video before approving")
 
     state.timeline.approved = True
-    state.current_stage = "stage_4_stitch_complete"
+    state.current_stage = "stage_5_thumbnail"
     _save_state(ep_id, state)
     return {"approved": True, "current_stage": state.current_stage}

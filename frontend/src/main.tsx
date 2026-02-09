@@ -10,6 +10,7 @@ import './stages/stage1-script/ScriptStage'
 import './stages/stage2-tts/TTSStage'
 import './stages/stage3-scenes/ScenesStage'
 import './stages/stage4-stitch/StitchStage'
+import './stages/stage5-thumbnail/ThumbnailStage'
 
 import App from './App.tsx'
 

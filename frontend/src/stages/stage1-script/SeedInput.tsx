@@ -16,6 +16,7 @@ export default function SeedInput({ onSubmit, disabled }: SeedInputProps) {
         placeholder="e.g. Siyuan loses his homework..."
         onSubmit={onSubmit}
         disabled={disabled}
+        allowEmpty
       />
     </div>
   );

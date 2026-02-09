@@ -6,6 +6,7 @@ interface TerminalInputProps {
   onSubmit: (value: string) => void;
   disabled?: boolean;
   autoFocus?: boolean;
+  allowEmpty?: boolean;
 }
 
 export default function TerminalInput({
@@ -14,6 +15,7 @@ export default function TerminalInput({
   onSubmit,
   disabled = false,
   autoFocus = true,
+  allowEmpty = false,
 }: TerminalInputProps) {
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -25,7 +27,7 @@ export default function TerminalInput({
   }, [autoFocus]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && value.trim()) {
+    if (e.key === 'Enter' && (allowEmpty || value.trim())) {
       onSubmit(value.trim());
       setValue('');
     }

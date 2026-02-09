@@ -3,8 +3,10 @@ interface TTSControlsProps {
   generated: number;
   total: number;
   allGenerated: boolean;
+  speed: number;
   onToggleMode: () => void;
   onApprove: () => void;
+  onSpeedChange: (speed: number) => void;
   generating: boolean;
 }
 
@@ -13,8 +15,10 @@ export default function TTSControls({
   generated,
   total,
   allGenerated,
+  speed,
   onToggleMode,
   onApprove,
+  onSpeedChange,
   generating,
 }: TTSControlsProps) {
   return (
@@ -27,8 +31,22 @@ export default function TTSControls({
         gap: 12,
       }}
     >
-      <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-        TTS Progress: {generated}/{total}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+          TTS Progress: {generated}/{total}
+        </span>
+        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+          Speed: {speed.toFixed(2)}x
+        </span>
+        <input
+          type="range"
+          min={0.25}
+          max={4.0}
+          step={0.05}
+          value={speed}
+          onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
+          style={{ width: 100 }}
+        />
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>

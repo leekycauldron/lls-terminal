@@ -10,6 +10,8 @@ interface TimelineTrackProps {
   getClipLabel: (clip: TimelineClipType) => string;
   onMove: (clipId: string, newStartMs: number) => void;
   onResize: (clipId: string, newDurationMs: number) => void;
+  onClipSelect?: (clipId: string) => void;
+  selectedClipId?: string | null;
 }
 
 export default function TimelineTrack({
@@ -21,6 +23,8 @@ export default function TimelineTrack({
   getClipLabel,
   onMove,
   onResize,
+  onClipSelect,
+  selectedClipId,
 }: TimelineTrackProps) {
   const trackWidth = (totalDurationMs / 1000) * pixelsPerSecond + 100;
 
@@ -46,8 +50,10 @@ export default function TimelineTrack({
             episodeId={episodeId}
             pixelsPerSecond={pixelsPerSecond}
             label={getClipLabel(clip)}
+            selected={clip.id === selectedClipId}
             onMove={onMove}
             onResize={onResize}
+            onSelect={onClipSelect}
           />
         ))}
       </div>

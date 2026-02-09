@@ -10,6 +10,7 @@ import type {
   ScenesData,
   TimelineData,
   TimelineClip,
+  ThumbnailData,
 } from '../stages/types';
 
 // --- Episodes ---
@@ -26,6 +27,16 @@ export async function createEpisode(title?: string): Promise<EpisodeSummary> {
 
 export async function getEpisode(epId: string): Promise<EpisodeState> {
   const { data } = await client.get(`/episodes/${epId}`);
+  return data;
+}
+
+export async function deleteEpisode(epId: string): Promise<{ deleted: string }> {
+  const { data } = await client.delete(`/episodes/${epId}`);
+  return data;
+}
+
+export async function unapproveStage(epId: string, stage: string): Promise<{ stage: string; approved: boolean }> {
+  const { data } = await client.post(`/episodes/${epId}/unapprove`, { stage });
   return data;
 }
 
@@ -115,6 +126,11 @@ export async function setTTSMode(epId: string, mode: string) {
   return data;
 }
 
+export async function setTTSSpeed(epId: string, speed: number): Promise<{ speed: number }> {
+  const { data } = await client.put(`/episodes/${epId}/tts/speed`, { speed });
+  return data;
+}
+
 export async function updateTTSLines(epId: string, lines: ScriptLine[]): Promise<ScriptLine[]> {
   const { data } = await client.put(`/episodes/${epId}/tts/lines`, lines);
   return data;
@@ -136,6 +152,11 @@ export async function approveTTS(epId: string) {
 }
 
 // --- Scenes (Stage 3) ---
+
+export async function setArtStyle(epId: string, artStyle: string) {
+  const { data } = await client.put(`/episodes/${epId}/scenes/art-style`, { art_style: artStyle });
+  return data as { art_style: string };
+}
 
 export async function generateSceneBreakdown(epId: string): Promise<ScenesData> {
   const { data } = await client.post(`/episodes/${epId}/scenes/generate-breakdown`);
@@ -206,5 +227,32 @@ export async function exportTimeline(epId: string) {
 
 export async function approveTimeline(epId: string) {
   const { data } = await client.post(`/episodes/${epId}/timeline/approve`);
+  return data as { approved: boolean; current_stage: string };
+}
+
+// --- Thumbnail (Stage 5) ---
+
+export async function initializeThumbnail(epId: string): Promise<ThumbnailData> {
+  const { data } = await client.post(`/episodes/${epId}/thumbnail/initialize`);
+  return data;
+}
+
+export async function updateThumbnailPrompt(epId: string, prompt: string): Promise<ThumbnailData> {
+  const { data } = await client.put(`/episodes/${epId}/thumbnail/prompt`, { prompt });
+  return data;
+}
+
+export async function generateThumbnail(epId: string): Promise<ThumbnailData> {
+  const { data } = await client.post(`/episodes/${epId}/thumbnail/generate`);
+  return data;
+}
+
+export async function revertThumbnail(epId: string) {
+  const { data } = await client.delete(`/episodes/${epId}/thumbnail/revert`);
+  return data;
+}
+
+export async function approveThumbnail(epId: string) {
+  const { data } = await client.post(`/episodes/${epId}/thumbnail/approve`);
   return data as { approved: boolean; current_stage: string };
 }

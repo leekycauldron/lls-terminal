@@ -68,7 +68,7 @@ def generate_script(state: EpisodeState, idea: str) -> list[ScriptLine]:
     result = generate_json(
         system="You are a scriptwriter for a Chinese learning show. Return JSON only.",
         user=prompt,
-        max_tokens=8192,
+        max_tokens=16384,
     )
     lines = []
     for i, line_data in enumerate(result.get("lines", [])):

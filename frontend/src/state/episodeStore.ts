@@ -9,6 +9,7 @@ import type {
   Scene,
   TimelineData,
   TimelineClip,
+  ThumbnailData,
 } from '../stages/types';
 
 interface EpisodeStore {
@@ -16,14 +17,15 @@ interface EpisodeStore {
   state: EpisodeState | null;
   currentStage: string;
 
-  setEpisodeId: (id: string) => void;
-  setState: (state: EpisodeState) => void;
+  setEpisodeId: (id: string | null) => void;
+  setState: (state: EpisodeState | null) => void;
   setCurrentStage: (stage: string) => void;
   setContext: (context: ContextData) => void;
   setScriptLines: (lines: ScriptLine[]) => void;
   setScriptIdea: (idea: string) => void;
   setScriptSeed: (seed: string) => void;
   setScriptApproved: (approved: boolean) => void;
+  setArtStyle: (artStyle: string) => void;
 
   // TTS
   setTTSData: (tts: TTSData) => void;
@@ -41,6 +43,9 @@ interface EpisodeStore {
   setTimelineData: (timeline: TimelineData) => void;
   setTimelineClips: (clips: TimelineClip[]) => void;
   updateClip: (clipId: string, updates: Partial<TimelineClip>) => void;
+
+  // Thumbnail
+  setThumbnailData: (thumbnail: ThumbnailData) => void;
 }
 
 export const useEpisodeStore = create<EpisodeStore>((set) => ({
@@ -50,7 +55,7 @@ export const useEpisodeStore = create<EpisodeStore>((set) => ({
 
   setEpisodeId: (id) => set({ episodeId: id }),
 
-  setState: (state) => set({ state, currentStage: state.current_stage }),
+  setState: (state) => set({ state, currentStage: state?.current_stage ?? 'stage_0_context' }),
 
   setCurrentStage: (stage) =>
     set((s) => ({
@@ -89,6 +94,11 @@ export const useEpisodeStore = create<EpisodeStore>((set) => ({
       state: s.state
         ? { ...s.state, script: { ...s.state.script, approved } }
         : null,
+    })),
+
+  setArtStyle: (artStyle) =>
+    set((s) => ({
+      state: s.state ? { ...s.state, art_style: artStyle } : null,
     })),
 
   // TTS
@@ -160,4 +170,10 @@ export const useEpisodeStore = create<EpisodeStore>((set) => ({
       );
       return { state: { ...s.state, timeline: { ...s.state.timeline, clips } } };
     }),
+
+  // Thumbnail
+  setThumbnailData: (thumbnail) =>
+    set((s) => ({
+      state: s.state ? { ...s.state, thumbnail } : null,
+    })),
 }));

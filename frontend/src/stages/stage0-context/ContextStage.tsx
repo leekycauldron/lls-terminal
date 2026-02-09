@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { StageComponentProps } from '../types';
+import type { StageComponentProps, ContextData } from '../types';
 import { loadContext } from '../../api/stages';
 import { useEpisodeStore } from '../../state/episodeStore';
 import ProgressBar from '../../components/ProgressBar';
@@ -15,11 +15,42 @@ const BOOT_SEQUENCE: BootLine[] = [
   { text: 'Loading episode history...', delay: 200 },
 ];
 
+function ExpandableLog({ label, items }: { label: string; items: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div>
+      <div
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          color: 'var(--text-secondary)',
+          fontSize: 13,
+          lineHeight: 1.8,
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
+      >
+        {expanded ? '▼' : '▶'} {label}
+      </div>
+      {expanded && (
+        <div style={{ paddingLeft: 24, fontSize: 12, lineHeight: 1.6 }}>
+          {items.map((item, i) => (
+            <div key={i} style={{ color: 'var(--text-dim)' }}>
+              {item}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ContextStage({ episodeId, onAdvance }: StageComponentProps) {
   const [bootLines, setBootLines] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [contextLoaded, setContextLoaded] = useState(false);
+  const [contextData, setContextData] = useState<ContextData | null>(null);
   const setContext = useEpisodeStore((s) => s.setContext);
   const setCurrentStage = useEpisodeStore((s) => s.setCurrentStage);
 
@@ -40,6 +71,7 @@ function ContextStage({ episodeId, onAdvance }: StageComponentProps) {
         const ctx = await loadContext(episodeId);
         if (cancelled) return;
         setContext(ctx);
+        setContextData(ctx);
 
         const charCount = Object.keys(ctx.characters).length;
         const settingCount = Object.keys(ctx.settings).length;
@@ -47,9 +79,9 @@ function ContextStage({ episodeId, onAdvance }: StageComponentProps) {
 
         setBootLines((prev) => [
           ...prev,
-          `  ✓ ${charCount} characters loaded`,
-          `  ✓ ${settingCount} settings loaded`,
-          `  ✓ ${histCount} previous episodes loaded`,
+          `__expandable_chars__`,
+          `__expandable_settings__`,
+          `__expandable_history__`,
           '',
           'Context loaded. Ready to proceed.',
         ]);
@@ -73,25 +105,67 @@ function ContextStage({ episodeId, onAdvance }: StageComponentProps) {
     onAdvance();
   };
 
+  const renderLine = (line: string, i: number) => {
+    if (line === '__expandable_chars__' && contextData) {
+      const chars = Object.keys(contextData.characters);
+      return (
+        <ExpandableLog
+          key={i}
+          label={`✓ ${chars.length} characters loaded`}
+          items={chars.map((name) => {
+            const info = contextData.characters[name];
+            return `${name} — ${info.role}`;
+          })}
+        />
+      );
+    }
+    if (line === '__expandable_settings__' && contextData) {
+      const settings = Object.entries(contextData.settings);
+      return (
+        <ExpandableLog
+          key={i}
+          label={`✓ ${settings.length} settings loaded`}
+          items={settings.map(([key, info]) => `${key} — ${info.name_en}`)}
+        />
+      );
+    }
+    if (line === '__expandable_history__' && contextData) {
+      const history = contextData.episode_history;
+      return (
+        <ExpandableLog
+          key={i}
+          label={`✓ ${history.length} previous episodes loaded`}
+          items={
+            history.length > 0
+              ? history.map((ep) => `${ep.id}: ${ep.title}`)
+              : ['(none)']
+          }
+        />
+      );
+    }
+
+    return (
+      <div
+        key={i}
+        className="flicker"
+        style={{
+          color: line.startsWith('  ✓')
+            ? 'var(--text-secondary)'
+            : line.startsWith('  ✗')
+              ? 'var(--danger)'
+              : 'var(--text-primary)',
+          fontSize: 13,
+          lineHeight: 1.8,
+        }}
+      >
+        {line || '\u00A0'}
+      </div>
+    );
+  };
+
   return (
     <div>
-      {bootLines.map((line, i) => (
-        <div
-          key={i}
-          className="flicker"
-          style={{
-            color: line.startsWith('  ✓')
-              ? 'var(--text-secondary)'
-              : line.startsWith('  ✗')
-                ? 'var(--danger)'
-                : 'var(--text-primary)',
-            fontSize: 13,
-            lineHeight: 1.8,
-          }}
-        >
-          {line || '\u00A0'}
-        </div>
-      ))}
+      {bootLines.map((line, i) => renderLine(line, i))}
 
       {loading && <ProgressBar label="Loading context..." />}
       {error && (

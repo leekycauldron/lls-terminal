@@ -9,7 +9,7 @@ from config import ELEVENLABS_API_KEY
 ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1"
 
 
-def generate_tts(voice_id: str, text: str, output_path: Path) -> int:
+def generate_tts(voice_id: str, text: str, output_path: Path, speed: float = 1.0) -> int:
     """Generate TTS audio via ElevenLabs API. Returns duration in ms."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -26,6 +26,7 @@ def generate_tts(voice_id: str, text: str, output_path: Path) -> int:
             "voice_settings": {
                 "stability": 0.5,
                 "similarity_boost": 0.75,
+                "speed": max(0.25, min(4.0, speed)),
             },
         },
         timeout=60.0,

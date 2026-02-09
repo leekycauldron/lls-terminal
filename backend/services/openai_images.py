@@ -39,7 +39,8 @@ def generate_scene_image(
                 ref_paths.append(p)
 
     if ref_paths:
-        # Use images.edit with reference images for visual continuity
+        # images.edit supports gpt-image-1 with reference images
+        # but only allows sizes up to 1536x1024 (no 1792x1024)
         image_files = [open(str(p), "rb") for p in ref_paths]
         try:
             response = client.images.edit(
@@ -53,12 +54,12 @@ def generate_scene_image(
             for f in image_files:
                 f.close()
     else:
-        # No references, use generate
+        # No references — generate supports 1792x1024 for 16:9
         response = client.images.generate(
             model="gpt-image-1",
             prompt=prompt,
             n=1,
-            size="1536x1024",
+            size="1792x1024",
         )
 
     # Decode and save
