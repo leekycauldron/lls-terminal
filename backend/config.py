@@ -13,3 +13,4 @@ BACKEND_DIR = Path(__file__).resolve().parent
 CHARACTERS_DIR = BACKEND_DIR / "characters"
 SETTINGS_DIR = BACKEND_DIR / "settings"
 EPISODES_DIR = BACKEND_DIR / "episodes"
+TEMPLATES_DIR = BACKEND_DIR / "templates"

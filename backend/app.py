@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from config import EPISODES_DIR, CHARACTERS_DIR, SETTINGS_DIR
+from config import EPISODES_DIR, CHARACTERS_DIR, SETTINGS_DIR, TEMPLATES_DIR
 from models import EpisodeState, EpisodeSummary
 from stages.registry import discover_stages, mount_stage_routers
 
@@ -52,6 +52,7 @@ mount_stage_routers(app, stages)
 app.mount("/static/episodes", StaticFiles(directory=str(EPISODES_DIR)), name="episodes_static")
 app.mount("/static/characters", StaticFiles(directory=str(CHARACTERS_DIR)), name="characters_static")
 app.mount("/static/settings", StaticFiles(directory=str(SETTINGS_DIR)), name="settings_static")
+app.mount("/static/templates", StaticFiles(directory=str(TEMPLATES_DIR)), name="templates_static")
 
 
 # --- Global routes ---

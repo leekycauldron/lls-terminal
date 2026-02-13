@@ -140,7 +140,6 @@ def build_video(clips: list[dict], episode_dir: Path) -> Path:
                     "-map", "[aout]",
                     "-c:v", "copy",
                     "-c:a", "aac",
-                    "-shortest",
                     str(output_path),
                 ],
                 check=True,

@@ -1,8 +1,43 @@
 import uuid
 
 from config import EPISODES_DIR
-from models import EpisodeState, TimelineClip
+from models import EpisodeState, ScriptLine, TimelineClip
 from services.ffmpeg import get_audio_duration_ms
+
+
+def _ms_to_srt_time(ms: int) -> str:
+    """Convert milliseconds to SRT timecode format HH:MM:SS,mmm."""
+    hours = ms // 3_600_000
+    ms %= 3_600_000
+    minutes = ms // 60_000
+    ms %= 60_000
+    seconds = ms // 1_000
+    millis = ms % 1_000
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{millis:03d}"
+
+
+def generate_srt(state: EpisodeState, offset_ms: int = 0) -> str:
+    """Generate SRT caption content with zh / pinyin / en lines per entry."""
+    audio_clips = sorted(
+        [c for c in state.timeline.clips if c.type == "audio"],
+        key=lambda c: c.start_ms,
+    )
+    lines_by_id: dict[str, ScriptLine] = {
+        line.id: line for line in state.script.lines
+    }
+
+    entries: list[str] = []
+    for idx, clip in enumerate(audio_clips, start=1):
+        line = lines_by_id.get(clip.source_id)
+        if not line:
+            continue
+        start = _ms_to_srt_time(clip.start_ms + offset_ms)
+        end = _ms_to_srt_time(clip.start_ms + clip.duration_ms + offset_ms)
+        entries.append(
+            f"{idx}\n{start} --> {end}\n{line.text_zh}\n{line.text_pinyin}\n{line.text_en}"
+        )
+
+    return "\n\n".join(entries) + "\n"
 
 
 def initialize_timeline(state: EpisodeState) -> list[TimelineClip]:

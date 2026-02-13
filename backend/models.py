@@ -78,11 +78,24 @@ class TimelineClip(BaseModel):
     zoom_end: float = 1.3
 
 
+class IntroData(BaseModel):
+    title_zh: str = ""
+    title_en: str = ""
+    character_id: str = ""
+    tts_text: str = ""
+    image_file: str = ""
+    audio_file: str = ""
+    audio_duration_ms: int = 0
+    tts_generated: bool = False
+    image_uploaded: bool = False
+
+
 class TimelineData(BaseModel):
     clips: list[TimelineClip] = []
     total_duration_ms: int = 0
     output_file: str = ""
     approved: bool = False
+    intro: IntroData = Field(default_factory=IntroData)
 
 
 class ThumbnailData(BaseModel):

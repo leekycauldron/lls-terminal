@@ -82,11 +82,24 @@ export interface TimelineClip {
   zoom_end: number;
 }
 
+export interface IntroData {
+  title_zh: string;
+  title_en: string;
+  character_id: string;
+  tts_text: string;
+  image_file: string;
+  audio_file: string;
+  audio_duration_ms: number;
+  tts_generated: boolean;
+  image_uploaded: boolean;
+}
+
 export interface TimelineData {
   clips: TimelineClip[];
   total_duration_ms: number;
   output_file: string;
   approved: boolean;
+  intro: IntroData;
 }
 
 export interface ThumbnailData {

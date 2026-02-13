@@ -7,11 +7,13 @@ import {
   exportTimeline,
   approveTimeline,
   unapproveStage,
+  downloadCaptions,
 } from '../../api/stages';
 import { registerStage } from '../stageRegistry';
 import Timeline from './Timeline';
 import ExportButton from './ExportButton';
 import VideoPreview from './VideoPreview';
+import IntroPanel from './IntroPanel';
 import ProgressBar from '../../components/ProgressBar';
 
 type Phase = 'initializing' | 'editing' | 'exporting' | 'done';
@@ -142,6 +144,23 @@ function StitchStage({ episodeId }: StageComponentProps) {
 
       {phase === 'editing' && (
         <>
+          <IntroPanel
+            episodeId={episodeId}
+            episodeNumber={parseInt(episodeId.replace('ep_', ''), 10)}
+            seed={state?.script.seed || ''}
+            intro={timeline?.intro || {
+              character_id: '',
+              tts_text: '',
+              image_file: '',
+              audio_file: '',
+              audio_duration_ms: 0,
+              tts_generated: false,
+              image_uploaded: false,
+            }}
+            characters={state?.context.characters || {}}
+            onIntroUpdate={(intro) => setTimelineData({ ...timeline!, intro })}
+          />
+
           <Timeline
             clips={clips}
             totalDurationMs={timeline?.total_duration_ms || 0}
@@ -228,6 +247,12 @@ function StitchStage({ episodeId }: StageComponentProps) {
             />
 
             <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => downloadCaptions(episodeId)}
+                style={{ ...btnStyle, borderColor: 'var(--text-dim)', color: 'var(--text-dim)' }}
+              >
+                Download SRT
+              </button>
               <button
                 onClick={handleSaveClips}
                 style={{ ...btnStyle, borderColor: 'var(--text-dim)', color: 'var(--text-dim)' }}

@@ -10,6 +10,7 @@ import type {
   ScenesData,
   TimelineData,
   TimelineClip,
+  IntroData,
   ThumbnailData,
 } from '../stages/types';
 
@@ -228,6 +229,34 @@ export async function exportTimeline(epId: string) {
 export async function approveTimeline(epId: string) {
   const { data } = await client.post(`/episodes/${epId}/timeline/approve`);
   return data as { approved: boolean; current_stage: string };
+}
+
+export async function uploadIntroImage(epId: string, file: File): Promise<IntroData> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await client.post(`/episodes/${epId}/timeline/intro/upload-image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function generateIntroTitle(epId: string): Promise<IntroData> {
+  const { data } = await client.post(`/episodes/${epId}/timeline/intro/generate-title`);
+  return data;
+}
+
+export async function updateIntro(epId: string, updates: { title_zh?: string; title_en?: string; character_id?: string; tts_text?: string }): Promise<IntroData> {
+  const { data } = await client.put(`/episodes/${epId}/timeline/intro`, updates);
+  return data;
+}
+
+export async function generateIntroTTS(epId: string): Promise<IntroData> {
+  const { data } = await client.post(`/episodes/${epId}/timeline/intro/generate-tts`);
+  return data;
+}
+
+export function downloadCaptions(epId: string) {
+  window.open(`http://localhost:8000/api/episodes/${epId}/timeline/captions`, '_blank');
 }
 
 // --- Thumbnail (Stage 5) ---
