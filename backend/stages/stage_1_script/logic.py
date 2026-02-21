@@ -80,5 +80,6 @@ def generate_script(state: EpisodeState, idea: str) -> list[ScriptLine]:
             text_en=line_data["text_en"],
             text_pinyin=line_data["text_pinyin"],
             direction=line_data.get("direction") or None,
+            emotion=line_data.get("emotion", ""),
         ))
     return lines

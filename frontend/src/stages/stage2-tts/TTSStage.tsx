@@ -11,6 +11,7 @@ import {
   addTTSLine,
   deleteTTSLine,
   approveTTS,
+  suggestEmotions,
   unapproveStage,
 } from '../../api/stages';
 import { registerStage } from '../stageRegistry';
@@ -20,6 +21,7 @@ import TTSControls from './TTSControls';
 import ProgressBar from '../../components/ProgressBar';
 
 const STATIC_BASE = 'http://localhost:8000/static/episodes';
+const EMOTIONS = ['happy', 'sad', 'angry', 'excited', 'worried', 'neutral', 'curious', 'surprised', 'embarrassed'];
 
 type Phase = 'initializing' | 'editing' | 'generating' | 'done';
 
@@ -47,6 +49,7 @@ function TTSStage({ episodeId }: StageComponentProps) {
   const [phase, setPhase] = useState<Phase>(initialPhase);
   const [error, setError] = useState<string | null>(null);
   const [generatingLineId, setGeneratingLineId] = useState<string | null>(null);
+  const [suggestingEmotions, setSuggestingEmotions] = useState(false);
 
   // Initialize on mount if needed
   useEffect(() => {
@@ -158,6 +161,19 @@ function TTSStage({ episodeId }: StageComponentProps) {
     }
   };
 
+  const handleSuggestEmotions = async () => {
+    setSuggestingEmotions(true);
+    setError(null);
+    try {
+      const result = await suggestEmotions(episodeId);
+      setScriptLines(result);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to suggest emotions');
+    } finally {
+      setSuggestingEmotions(false);
+    }
+  };
+
   // Line editing callbacks
   const handleReorder = useCallback(
     async (fromIndex: number, toIndex: number) => {
@@ -198,6 +214,7 @@ function TTSStage({ episodeId }: StageComponentProps) {
         text_en: '',
         text_pinyin: '',
         direction: null,
+        emotion: '',
       };
       try {
         const result = await addTTSLine(episodeId, position, newLine);
@@ -237,6 +254,24 @@ function TTSStage({ episodeId }: StageComponentProps) {
 
       return (
         <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
+          <select
+            value={line.emotion || ''}
+            onChange={(e) => handleEdit(line.id, { emotion: e.target.value })}
+            style={{
+              background: 'var(--bg-primary)',
+              color: 'var(--text-dim)',
+              border: '1px solid var(--border-color)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              padding: '2px 4px',
+              borderRadius: 2,
+            }}
+          >
+            <option value="">--</option>
+            {EMOTIONS.map((em) => (
+              <option key={em} value={em}>{em}</option>
+            ))}
+          </select>
           {status?.generated && status.audio_file && (
             <AudioPlayer
               src={`${STATIC_BASE}/${episodeId}/${status.audio_file}`}
@@ -298,6 +333,15 @@ function TTSStage({ episodeId }: StageComponentProps) {
 
       {phase === 'editing' && (
         <>
+          <div style={{ marginBottom: 8 }}>
+            <button
+              onClick={handleSuggestEmotions}
+              disabled={suggestingEmotions}
+              style={{ ...genBtnStyle, opacity: suggestingEmotions ? 0.5 : 1 }}
+            >
+              {suggestingEmotions ? 'suggesting...' : 'auto emotions'}
+            </button>
+          </div>
           <TTSControls
             mode={tts?.mode || 'manual'}
             generated={generatedCount}

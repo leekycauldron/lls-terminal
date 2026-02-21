@@ -12,23 +12,32 @@ PROMPTS_DIR = Path(__file__).parent / "prompts"
 def format_script_lines(state: EpisodeState) -> str:
     lines = []
     for line in state.script.lines:
-        lines.append(
-            f"- [{line.id}] {line.character_id}: {line.text_zh} ({line.text_en})"
-        )
+        parts = f"- [{line.id}] {line.character_id}: {line.text_zh} ({line.text_en})"
+        if line.emotion:
+            parts += f" [emotion: {line.emotion}]"
+        if line.direction:
+            parts += f" [direction: {line.direction}]"
+        lines.append(parts)
     return "\n".join(lines)
 
 
 def format_characters(characters: dict) -> str:
     lines = []
     for name, info in characters.items():
-        lines.append(f"- {name}: {info.get('role', '')}. Visual: {info.get('visual', '')}")
+        desc = f"- {name}: {info.get('role', '')}. Visual: {info.get('visual', '')}"
+        if info.get('personality'):
+            desc += f". Personality: {info['personality']}"
+        lines.append(desc)
     return "\n".join(lines)
 
 
 def format_settings(settings: dict) -> str:
     lines = []
     for key, info in settings.items():
-        lines.append(f"- {key} ({info['name_zh']} / {info['name_en']})")
+        desc = f"- {key} ({info['name_zh']} / {info['name_en']})"
+        if info.get('description'):
+            desc += f": {info['description']}"
+        lines.append(desc)
     return "\n".join(lines)
 
 
@@ -70,17 +79,15 @@ def generate_single_scene_image(state: EpisodeState, scene: Scene) -> str:
     setting_ref = None
     setting = state.context.settings.get(scene.setting_id)
     if setting and setting.get("reference"):
-        ref = setting["reference"]
-        setting_ref_path = SETTINGS_DIR.parent / ref
-        if setting_ref_path.exists():
-            setting_ref = str(setting_ref_path)
+        ref_path = SETTINGS_DIR.parent / setting["reference"]
+        if ref_path.exists():
+            setting_ref = str(ref_path)
 
     char_refs = []
     for char_id in scene.character_ids:
         char = state.context.characters.get(char_id)
         if char and char.get("reference"):
-            ref = char["reference"]
-            ref_path = CHARACTERS_DIR.parent / ref
+            ref_path = CHARACTERS_DIR.parent / char["reference"]
             if ref_path.exists():
                 char_refs.append(str(ref_path))
 

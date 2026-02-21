@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { ScriptLine as ScriptLineType } from '../types';
 
+const EMOTIONS = ['happy', 'sad', 'angry', 'excited', 'worried', 'neutral', 'curious', 'surprised', 'embarrassed'];
+
 const CHARACTER_COLORS: Record<string, string> = {
   '思源': 'var(--char-siyuan)',
   '思琪': 'var(--char-siqi)',
@@ -36,11 +38,12 @@ export default function ScriptLineComponent({
   const [editZh, setEditZh] = useState(line.text_zh);
   const [editEn, setEditEn] = useState(line.text_en);
   const [editPinyin, setEditPinyin] = useState(line.text_pinyin);
+  const [editEmotion, setEditEmotion] = useState(line.emotion || '');
 
   const color = CHARACTER_COLORS[line.character_id] || 'var(--text-primary)';
 
   const handleSave = () => {
-    onEdit?.(line.id, { text_zh: editZh, text_en: editEn, text_pinyin: editPinyin });
+    onEdit?.(line.id, { text_zh: editZh, text_en: editEn, text_pinyin: editPinyin, emotion: editEmotion });
     setEditing(false);
   };
 
@@ -48,6 +51,7 @@ export default function ScriptLineComponent({
     setEditZh(line.text_zh);
     setEditEn(line.text_en);
     setEditPinyin(line.text_pinyin);
+    setEditEmotion(line.emotion || '');
     setEditing(false);
   };
 
@@ -106,6 +110,16 @@ export default function ScriptLineComponent({
                 style={inputStyle}
                 placeholder="English"
               />
+              <select
+                value={editEmotion}
+                onChange={(e) => setEditEmotion(e.target.value)}
+                style={inputStyle}
+              >
+                <option value="">No emotion</option>
+                {EMOTIONS.map((em) => (
+                  <option key={em} value={em}>{em}</option>
+                ))}
+              </select>
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <button onClick={handleSave} style={btnStyle}>Save</button>
                 <button onClick={handleCancel} style={{ ...btnStyle, borderColor: 'var(--text-dim)', color: 'var(--text-dim)' }}>
@@ -115,7 +129,14 @@ export default function ScriptLineComponent({
             </div>
           ) : (
             <>
-              <div style={{ fontSize: 15 }}>{line.text_zh}</div>
+              <div style={{ fontSize: 15 }}>
+                {line.emotion && (
+                  <span style={{ fontSize: 11, color: 'var(--text-dim)', marginRight: 6 }}>
+                    [{line.emotion}]
+                  </span>
+                )}
+                {line.text_zh}
+              </div>
               <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                 {line.text_pinyin}
               </div>

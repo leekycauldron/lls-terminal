@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface AudioPlayerProps {
   src: string;
@@ -9,9 +9,18 @@ export default function AudioPlayer({ src, durationMs }: AudioPlayerProps) {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Reset audio element when src or duration changes (i.e. regenerated)
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setPlaying(false);
+    }
+  }, [src, durationMs]);
+
   const toggle = () => {
     if (!audioRef.current) {
-      audioRef.current = new Audio(src);
+      audioRef.current = new Audio(`${src}?v=${durationMs}`);
       audioRef.current.onended = () => setPlaying(false);
     }
     if (playing) {

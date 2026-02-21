@@ -5,4 +5,15 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+client.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const detail = err.response?.data?.detail;
+    if (detail) {
+      return Promise.reject(new Error(detail));
+    }
+    return Promise.reject(err);
+  },
+);
+
 export default client;

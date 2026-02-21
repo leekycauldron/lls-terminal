@@ -1,7 +1,9 @@
-You are breaking a Chinese-language learning show script into visual scenes.
+You are writing image generation prompts for a Chinese-language learning show.
+Reference images of each character and setting will be provided separately — do NOT describe character appearances.
 
-Each scene represents a continuous visual moment — same setting, same characters on screen.
-When the setting changes or a character enters/exits, start a new scene.
+You are generating prompts for STILL IMAGES, not video. Each prompt describes ONE frozen moment. No transitions, no movement sequences, no "expression changes from X to Y".
+
+The image generator has NO context about the story. Each prompt must fully describe the image on its own.
 
 Script lines:
 {script_lines}
@@ -12,18 +14,21 @@ Available settings:
 Available characters:
 {characters}
 
-Return a JSON array of scenes. Each scene has:
-- "prompt": a detailed visual description for image generation (describe the setting, characters, their expressions, actions, lighting, mood — in English)
-- "setting_id": the setting key from the available settings
-- "character_ids": array of character keys who appear in this scene
-- "line_ids": array of script line IDs covered by this scene
+For each scene return:
+- "prompt": a description of a single still image. Head-and-shoulders or waist-up framing ONLY — never show a full room or full body. 1 or 2 characters maximum. Describe ONE expression, ONE pose, ONE moment. Be specific with numbers (e.g. "1 hand raised" not "hands up", "2 people" not "a group"). State the camera angle and which direction the character faces. Refer to characters by NAME only — never describe their appearance.
+- "setting_id": the setting key
+- "character_ids": array of character keys visible (1 or 2 only)
+- "line_ids": array of script line IDs covered
 
 Rules:
 - Every script line must be covered by exactly one scene
 - Lines in a scene must be contiguous (no gaps)
-- Prompts should be vivid and specific, suitable for an AI image generator
-- Include character visual descriptions from the character info in the prompt
-- Include setting visual details in the prompt
-- Aim for 8-15 scenes for a typical script
+- Aim for 8-15 scenes
+- 1 or 2 characters per image, never more
+- NEVER show full body or full room — always head-and-shoulders or waist-up
+- Each image is ONE frozen moment — no transitions, no before/after, no sequences
+- Use specific numbers, not vague words like "several", "few", "some", "many"
+- ALWAYS use character names — NEVER describe their appearance, hair, clothing, age, or body type
+- Be explicit about camera angle and direction characters face
 
 Return JSON only: {{"scenes": [...]}}

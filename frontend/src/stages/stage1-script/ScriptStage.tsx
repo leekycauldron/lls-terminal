@@ -131,6 +131,7 @@ function ScriptStage({ episodeId }: StageComponentProps) {
         text_en: '',
         text_pinyin: '',
         direction: null,
+        emotion: '',
       };
       try {
         const result = await addLine(episodeId, position, newLine);

@@ -44,6 +44,21 @@ function SortableItem({ id, children }: { id: string; children: ReactNode }) {
   );
 }
 
+class SmartPointerSensor extends PointerSensor {
+  static activators = [
+    {
+      eventName: 'onPointerDown' as const,
+      handler: ({ nativeEvent: event }: { nativeEvent: PointerEvent }) => {
+        const target = event.target as HTMLElement | null;
+        if (target?.closest('select, input, textarea, button, [data-no-dnd]')) {
+          return false;
+        }
+        return true;
+      },
+    },
+  ];
+}
+
 export default function DragDropList<T extends { id: string }>({
   items,
   onReorder,
@@ -51,7 +66,7 @@ export default function DragDropList<T extends { id: string }>({
   disabled = false,
 }: DragDropListProps<T>) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(SmartPointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 

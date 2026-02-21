@@ -161,5 +161,9 @@ async def approve(ep_id: str):
 
     state.scenes.approved = True
     state.current_stage = "stage_4_stitch"
+    # Clear old timeline so stage 4 re-initializes with the new scenes
+    state.timeline.clips = []
+    state.timeline.output_file = ""
+    state.timeline.approved = False
     _save_state(ep_id, state)
     return {"approved": True, "current_stage": state.current_stage}

@@ -19,6 +19,7 @@ class ScriptLine(BaseModel):
     text_en: str
     text_pinyin: str
     direction: Optional[str] = None
+    emotion: str = ""
 
 
 class ContextData(BaseModel):
@@ -75,12 +76,13 @@ class TimelineClip(BaseModel):
     duration_ms: int = 0
     order: int = 0
     zoom_start: float = 1.0
-    zoom_end: float = 1.3
+    zoom_end: float = 1.1
 
 
 class IntroData(BaseModel):
     title_zh: str = ""
     title_en: str = ""
+    title_pinyin: str = ""
     character_id: str = ""
     tts_text: str = ""
     image_file: str = ""
@@ -88,11 +90,16 @@ class IntroData(BaseModel):
     audio_duration_ms: int = 0
     tts_generated: bool = False
     image_uploaded: bool = False
+    speed: float = 1.0
+    video_file: str = ""
+    video_uploaded: bool = False
+    video_duration_ms: int = 0
 
 
 class TimelineData(BaseModel):
     clips: list[TimelineClip] = []
     total_duration_ms: int = 0
+    scene_gap_ms: int = 1000
     output_file: str = ""
     approved: bool = False
     intro: IntroData = Field(default_factory=IntroData)
@@ -103,6 +110,7 @@ class ThumbnailData(BaseModel):
     image_file: str = ""
     generated: bool = False
     approved: bool = False
+    synopsis: str = ""
 
 
 class EpisodeState(BaseModel):

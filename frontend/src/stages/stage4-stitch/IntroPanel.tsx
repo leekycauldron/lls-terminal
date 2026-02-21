@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import type { IntroData, ContextData } from '../types';
-import { uploadIntroImage, updateIntro, generateIntroTTS, generateIntroTitle } from '../../api/stages';
+import { uploadIntroImage, uploadIntroVideo, updateIntro, generateIntroTTS, generateIntroTitle, fixIntroTitle } from '../../api/stages';
 
 interface IntroPanelProps {
   episodeId: string;
@@ -20,10 +20,14 @@ export default function IntroPanel({
   onIntroUpdate,
 }: IntroPanelProps) {
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatingTitle, setGeneratingTitle] = useState(false);
+  const [fixingTitle, setFixingTitle] = useState(false);
+  const [lastEditedField, setLastEditedField] = useState<'title_zh' | 'title_en' | 'title_pinyin' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
   const [cacheBust, setCacheBust] = useState(Date.now());
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +43,22 @@ export default function IntroPanel({
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingVideo(true);
+    setError(null);
+    try {
+      const result = await uploadIntroVideo(episodeId, file);
+      onIntroUpdate(result);
+      setCacheBust(Date.now());
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Video upload failed');
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
@@ -65,7 +85,21 @@ export default function IntroPanel({
     }
   };
 
-  const handleTitleChange = async (field: 'title_zh' | 'title_en', value: string) => {
+  const handleFixTitle = async () => {
+    setFixingTitle(true);
+    setError(null);
+    try {
+      const result = await fixIntroTitle(episodeId, lastEditedField);
+      onIntroUpdate(result);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Fix title failed');
+    } finally {
+      setFixingTitle(false);
+    }
+  };
+
+  const handleTitleChange = async (field: 'title_zh' | 'title_en' | 'title_pinyin', value: string) => {
+    setLastEditedField(field);
     setError(null);
     try {
       const result = await updateIntro(episodeId, { [field]: value });
@@ -91,6 +125,7 @@ export default function IntroPanel({
     try {
       const result = await generateIntroTTS(episodeId);
       onIntroUpdate(result);
+      setCacheBust(Date.now());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'TTS generation failed');
     } finally {
@@ -133,11 +168,34 @@ export default function IntroPanel({
         >
           {generatingTitle ? 'Generating...' : 'Generate Title'}
         </button>
+        <button
+          onClick={handleFixTitle}
+          disabled={fixingTitle}
+          style={{ ...btnStyle, opacity: fixingTitle ? 0.5 : 1 }}
+        >
+          {fixingTitle ? 'Fixing...' : 'Fix Title'}
+        </button>
         <input
           type="text"
           value={intro.title_zh}
           onChange={(e) => handleTitleChange('title_zh', e.target.value)}
           placeholder="中文标题..."
+          style={{
+            flex: 1,
+            background: 'var(--bg-primary)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-color)',
+            padding: '4px 8px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 12,
+            borderRadius: 2,
+          }}
+        />
+        <input
+          type="text"
+          value={intro.title_pinyin}
+          onChange={(e) => handleTitleChange('title_pinyin', e.target.value)}
+          placeholder="Pīnyīn..."
           style={{
             flex: 1,
             background: 'var(--bg-primary)',
@@ -167,7 +225,7 @@ export default function IntroPanel({
         />
       </div>
 
-      {/* Template download + image upload */}
+      {/* Template download + image upload + video upload */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
         <a
           href="http://localhost:8000/static/templates/template.png"
@@ -192,6 +250,21 @@ export default function IntroPanel({
             ✓ Image uploaded
           </span>
         )}
+        <button onClick={() => videoRef.current?.click()} style={btnStyle} disabled={uploadingVideo}>
+          {uploadingVideo ? 'Uploading...' : 'Upload Video'}
+        </button>
+        <input
+          ref={videoRef}
+          type="file"
+          accept="video/*"
+          onChange={handleVideoUpload}
+          style={{ display: 'none' }}
+        />
+        {intro.video_uploaded && (
+          <span style={{ color: 'var(--success, #4caf50)', fontSize: 12 }}>
+            ✓ Video uploaded ({(intro.video_duration_ms / 1000).toFixed(1)}s)
+          </span>
+        )}
       </div>
 
       {/* Image preview */}
@@ -202,6 +275,35 @@ export default function IntroPanel({
             alt="Intro card"
             style={{ maxWidth: 320, border: '1px solid var(--border-color)', borderRadius: 2 }}
           />
+        </div>
+      )}
+
+      {/* Video preview */}
+      {intro.video_uploaded && (
+        <div style={{ marginBottom: 12 }}>
+          <video
+            controls
+            src={`http://localhost:8000/static/episodes/${episodeId}/${intro.video_file}?t=${cacheBust}`}
+            style={{ maxWidth: 480, border: '1px solid var(--border-color)', borderRadius: 2 }}
+          />
+        </div>
+      )}
+
+      {/* Recording timing guide */}
+      {intro.tts_generated && (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: 8,
+            border: '1px solid var(--border-color)',
+            borderRadius: 2,
+            background: 'var(--bg-primary)',
+            fontSize: 12,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--text-dim)',
+          }}
+        >
+          TTS starts at 500ms &middot; Duration: {(intro.audio_duration_ms / 1000).toFixed(1)}s
         </div>
       )}
 
@@ -243,6 +345,25 @@ export default function IntroPanel({
             fontSize: 12,
             borderRadius: 2,
           }}
+        />
+
+        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+          Speed: {(intro.speed ?? 1.0).toFixed(2)}x
+        </span>
+        <input
+          type="range"
+          min={0.25}
+          max={4.0}
+          step={0.05}
+          value={intro.speed ?? 1.0}
+          onChange={async (e) => {
+            const speed = parseFloat(e.target.value);
+            try {
+              const result = await updateIntro(episodeId, { speed });
+              onIntroUpdate(result);
+            } catch {}
+          }}
+          style={{ width: 100 }}
         />
 
         <button

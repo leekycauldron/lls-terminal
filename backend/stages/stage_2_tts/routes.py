@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from config import EPISODES_DIR, ELEVENLABS_API_KEY
 from models import EpisodeState, ScriptLine, TTSLineStatus
+from services.llm import generate_json
 from stages.stage_2_tts.logic import initialize_tts, generate_line_tts, revert_line_tts
 
 router = APIRouter(prefix="/api/episodes/{ep_id}/tts", tags=["tts"])
@@ -226,6 +227,37 @@ async def delete_line(ep_id: str, line_id: str):
         line.order = i
     _save_state(ep_id, state)
     return [l.model_dump() for l in state.script.lines]
+
+
+@router.post("/suggest-emotions")
+async def suggest_emotions(ep_id: str):
+    state = _load_state(ep_id)
+    lines = state.script.lines
+    if not lines:
+        raise HTTPException(400, "No script lines")
+
+    lines_text = "\n".join(
+        f"{i+1}. [{l.character_id}] {l.text_zh}" for i, l in enumerate(lines)
+    )
+    result = generate_json(
+        system="You assign emotions to dialogue lines. Return JSON only.",
+        user=(
+            f"For each numbered line, pick ONE emotion from: "
+            f"happy, sad, angry, excited, worried, neutral, curious, surprised, embarrassed.\n\n"
+            f"{lines_text}\n\n"
+            f'{{"emotions": ["emotion1", "emotion2", ...]}}\n'
+            f"Return exactly {len(lines)} emotions in order."
+        ),
+        max_tokens=1024,
+    )
+    emotions = result.get("emotions", [])
+    for i, line in enumerate(lines):
+        if i < len(emotions):
+            line.emotion = emotions[i]
+
+    state.script.lines = lines
+    _save_state(ep_id, state)
+    return [l.model_dump() for l in lines]
 
 
 @router.post("/approve")

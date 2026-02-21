@@ -91,6 +91,39 @@ def generate_thumbnail_image(state: EpisodeState) -> str:
     return image_file
 
 
+def generate_episode_synopsis(state: EpisodeState) -> str:
+    """Generate a YouTube description/synopsis from the episode content."""
+    script_lines = []
+    for line in state.script.lines[:15]:
+        script_lines.append(f"{line.character_id}: {line.text_en}")
+
+    title_zh = state.timeline.intro.title_zh or state.script.seed
+    title_en = state.timeline.intro.title_en or state.script.seed
+
+    prompt = f"""Write a short YouTube video description for this Chinese learning show episode.
+
+Title: {title_zh} / {title_en}
+Episode idea: {state.script.idea}
+
+Dialogue excerpt:
+{chr(10).join(script_lines)}
+
+Requirements:
+- 2-3 sentences summarizing the episode story
+- Mention it's a Mandarin Chinese learning show for beginners
+- Include a few key vocabulary words from the episode (Chinese + English)
+- Keep it under 150 words
+- Do not use hashtags
+
+Return ONLY the description text, nothing else."""
+
+    return generate(
+        system="You write YouTube video descriptions for a Mandarin Chinese learning show. Return only the description text.",
+        user=prompt,
+        max_tokens=512,
+    ).strip()
+
+
 def revert_thumbnail_image(state: EpisodeState) -> None:
     """Delete thumbnail image file."""
     if state.thumbnail.image_file:

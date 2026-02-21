@@ -84,6 +84,31 @@ async def revert(ep_id: str):
     return {"reverted": True}
 
 
+@router.post("/generate-synopsis")
+async def generate_synopsis(ep_id: str):
+    state = _load_state(ep_id)
+    from stages.stage_5_thumbnail.logic import generate_episode_synopsis
+    try:
+        synopsis = generate_episode_synopsis(state)
+    except Exception as e:
+        raise HTTPException(500, f"Synopsis generation failed: {e}")
+    state.thumbnail.synopsis = synopsis
+    _save_state(ep_id, state)
+    return state.thumbnail.model_dump()
+
+
+class SynopsisRequest(BaseModel):
+    synopsis: str
+
+
+@router.put("/synopsis")
+async def update_synopsis(ep_id: str, req: SynopsisRequest):
+    state = _load_state(ep_id)
+    state.thumbnail.synopsis = req.synopsis
+    _save_state(ep_id, state)
+    return state.thumbnail.model_dump()
+
+
 @router.post("/approve")
 async def approve(ep_id: str):
     state = _load_state(ep_id)

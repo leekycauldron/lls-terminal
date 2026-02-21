@@ -147,6 +147,11 @@ export async function deleteTTSLine(epId: string, lineId: string): Promise<Scrip
   return data;
 }
 
+export async function suggestEmotions(epId: string): Promise<ScriptLine[]> {
+  const { data } = await client.post(`/episodes/${epId}/tts/suggest-emotions`);
+  return data;
+}
+
 export async function approveTTS(epId: string) {
   const { data } = await client.post(`/episodes/${epId}/tts/approve`);
   return data as { approved: boolean; current_stage: string };
@@ -216,6 +221,11 @@ export async function updateTimelineClips(epId: string, clips: TimelineClip[]): 
   return data;
 }
 
+export async function reflowTimeline(epId: string, sceneGapMs: number): Promise<TimelineData> {
+  const { data } = await client.post(`/episodes/${epId}/timeline/reflow`, { scene_gap_ms: sceneGapMs });
+  return data;
+}
+
 export async function updateTimelineClip(epId: string, clipId: string, updates: Partial<TimelineClip>): Promise<TimelineClip> {
   const { data } = await client.put(`/episodes/${epId}/timeline/clips/${clipId}`, updates);
   return data;
@@ -240,8 +250,22 @@ export async function uploadIntroImage(epId: string, file: File): Promise<IntroD
   return data;
 }
 
+export async function uploadIntroVideo(epId: string, file: File): Promise<IntroData> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await client.post(`/episodes/${epId}/timeline/intro/upload-video`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
 export async function generateIntroTitle(epId: string): Promise<IntroData> {
   const { data } = await client.post(`/episodes/${epId}/timeline/intro/generate-title`);
+  return data;
+}
+
+export async function fixIntroTitle(epId: string, sourceField?: string | null): Promise<IntroData> {
+  const { data } = await client.post(`/episodes/${epId}/timeline/intro/fix-title`, { source_field: sourceField || null });
   return data;
 }
 
@@ -278,6 +302,16 @@ export async function generateThumbnail(epId: string): Promise<ThumbnailData> {
 
 export async function revertThumbnail(epId: string) {
   const { data } = await client.delete(`/episodes/${epId}/thumbnail/revert`);
+  return data;
+}
+
+export async function generateSynopsis(epId: string): Promise<ThumbnailData> {
+  const { data } = await client.post(`/episodes/${epId}/thumbnail/generate-synopsis`);
+  return data;
+}
+
+export async function updateSynopsis(epId: string, synopsis: string): Promise<ThumbnailData> {
+  const { data } = await client.put(`/episodes/${epId}/thumbnail/synopsis`, { synopsis });
   return data;
 }
 

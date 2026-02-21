@@ -3,8 +3,12 @@ import TerminalLayout from './terminal/TerminalLayout';
 import TerminalHeader from './terminal/TerminalHeader';
 import StageRouter from './stages/StageRouter';
 import EpisodeMenu from './components/EpisodeMenu';
+import ShortsMenu from './shorts/ShortsMenu';
+import ShortsWorkflow from './shorts/ShortsWorkflow';
 import { useEpisodeStore } from './state/episodeStore';
+import { useShortsStore } from './shorts/shortsStore';
 import { listStages, getEpisode } from './api/stages';
+import { getShort } from './shorts/api';
 
 interface StageInfo {
   id: string;
@@ -12,13 +16,18 @@ interface StageInfo {
   name: string;
 }
 
+type AppMode = 'episodes' | 'shorts';
+
 export default function App() {
   const [stages, setStages] = useState<StageInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<AppMode>('episodes');
 
   const { episodeId, currentStage, setEpisodeId, setState, setCurrentStage } =
     useEpisodeStore();
+
+  const { shortId, setShortId, setState: setShortState } = useShortsStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -53,9 +62,38 @@ export default function App() {
     }
   };
 
+  const handleSelectShort = async (sId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      setShortId(sId);
+      const state = await getShort(sId);
+      setShortState(state);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load short');
+      setShortId(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBackToMenu = () => {
+    if (mode === 'episodes') {
+      setEpisodeId(null);
+      setState(null);
+    } else {
+      setShortId(null);
+      setShortState(null);
+    }
+  };
+
+  const handleSwitchMode = (newMode: AppMode) => {
+    // Clear any active selections
     setEpisodeId(null);
     setState(null);
+    setShortId(null);
+    setShortState(null);
+    setMode(newMode);
   };
 
   const handleAdvance = () => {
@@ -66,7 +104,9 @@ export default function App() {
     }
   };
 
-  if (error && !episodeId) {
+  const isActive = mode === 'episodes' ? !!episodeId : !!shortId;
+
+  if (error && !isActive) {
     return (
       <TerminalLayout
         header={<TerminalHeader stages={stages} currentStage="" />}
@@ -82,7 +122,7 @@ export default function App() {
     );
   }
 
-  const showMenu = !loading && !episodeId;
+  const showMenu = !loading && !isActive;
 
   return (
     <TerminalLayout
@@ -95,7 +135,7 @@ export default function App() {
         />
       }
       footer={
-        episodeId ? (
+        isActive ? (
           <div
             style={{
               display: 'flex',
@@ -117,7 +157,7 @@ export default function App() {
                 cursor: 'pointer',
               }}
             >
-              [episodes]
+              [menu]
             </button>
           </div>
         ) : undefined
@@ -126,13 +166,51 @@ export default function App() {
       {loading ? (
         <div style={{ color: 'var(--text-dim)' }}>Connecting...</div>
       ) : showMenu ? (
-        <EpisodeMenu onSelect={handleSelectEpisode} />
-      ) : episodeId ? (
+        <div>
+          {/* Mode tabs */}
+          <div style={{
+            display: 'flex',
+            gap: 0,
+            marginBottom: 16,
+            borderBottom: '1px solid var(--border-color)',
+          }}>
+            {(['episodes', 'shorts'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => handleSwitchMode(m)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: mode === m ? '2px solid var(--accent)' : '2px solid transparent',
+                  color: mode === m ? 'var(--accent)' : 'var(--text-dim)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 13,
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
+          {/* Menu content */}
+          {mode === 'episodes' ? (
+            <EpisodeMenu onSelect={handleSelectEpisode} />
+          ) : (
+            <ShortsMenu onSelect={handleSelectShort} />
+          )}
+        </div>
+      ) : mode === 'episodes' && episodeId ? (
         <StageRouter
           currentStage={currentStage}
           episodeId={episodeId}
           onAdvance={handleAdvance}
         />
+      ) : mode === 'shorts' && shortId ? (
+        <ShortsWorkflow shortId={shortId} />
       ) : null}
     </TerminalLayout>
   );

@@ -1,6 +1,9 @@
 import json
+import os
 import subprocess
 from pathlib import Path
+
+IS_WINDOWS = os.name == "nt"
 
 
 def get_audio_duration_ms(path: Path) -> int:
@@ -49,51 +52,75 @@ def build_video(clips: list[dict], episode_dir: Path) -> Path:
     if not scene_clips:
         raise ValueError("No scene clips to render")
 
-    # Step 1: Create video segments from each scene image
+    VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm", ".mkv"}
+
+    # Step 1: Create video segments from each scene image or video
     segment_paths = []
     for i, sc in enumerate(scene_clips):
-        img_path = episode_dir / sc["source_file"]
-        if not img_path.exists():
-            raise FileNotFoundError(f"Scene image not found: {img_path}")
+        src_path = episode_dir / sc["source_file"]
+        if not src_path.exists():
+            raise FileNotFoundError(f"Scene source not found: {src_path}")
 
         seg_path = episode_dir / f"_seg_{i}.mp4"
         duration_s = sc["duration_ms"] / 1000.0
         fps = 24
-        frames = int(duration_s * fps)
 
-        z_start = sc.get("zoom_start", 1.0)
-        z_end = sc.get("zoom_end", 1.3)
+        if src_path.suffix.lower() in VIDEO_EXTENSIONS:
+            # Video input: scale to exact 1920x1080, strip audio
+            vf = "scale=1920:1080"
+            subprocess.run(
+                [
+                    "ffmpeg", "-y",
+                    "-i", str(src_path),
+                    "-vf", vf,
+                    "-r", str(fps),
+                    "-c:v", "libx264",
+                    "-pix_fmt", "yuv420p",
+                    "-an",
+                    str(seg_path),
+                ],
+                check=True,
+                capture_output=True,
+            )
+        else:
+            # Image input: zoompan Ken Burns effect
+            frames = int(duration_s * fps)
+            z_start = sc.get("zoom_start", 1.0)
+            z_end = sc.get("zoom_end", 1.1)
 
-        # Scale input to a large canvas, then apply zoompan for Ken Burns effect
-        # Use high resolution + trunc() to avoid sub-pixel jitter
-        vf = (
-            f"scale=7680:4320,zoompan="
-            f"z='({z_start})+({z_end}-{z_start})*(on/{frames})':"
-            f"x='trunc(iw/2-(iw/zoom/2))':y='trunc(ih/2-(ih/zoom/2))':"
-            f"d={frames}:s=1920x1080:fps={fps}"
-        )
+            vf = (
+                f"scale=7680:4320,zoompan="
+                f"z='({z_start})+({z_end}-{z_start})*(on/{frames})':"
+                f"x='trunc(iw/2-(iw/zoom/2))':y='trunc(ih/2-(ih/zoom/2))':"
+                f"d={frames}:s=1920x1080:fps={fps}"
+            )
 
-        subprocess.run(
-            [
-                "ffmpeg", "-y",
-                "-loop", "1",
-                "-i", str(img_path),
-                "-c:v", "libx264",
-                "-t", f"{duration_s:.3f}",
-                "-pix_fmt", "yuv420p",
-                "-vf", vf,
-                str(seg_path),
-            ],
-            check=True,
-            capture_output=True,
-        )
+            subprocess.run(
+                [
+                    "ffmpeg", "-y",
+                    "-loop", "1",
+                    "-i", str(src_path),
+                    "-c:v", "libx264",
+                    "-t", f"{duration_s:.3f}",
+                    "-pix_fmt", "yuv420p",
+                    "-vf", vf,
+                    str(seg_path),
+                ],
+                check=True,
+                capture_output=True,
+            )
         segment_paths.append(seg_path)
 
     # Step 2: Concatenate scene segments
     concat_list = episode_dir / "_concat.txt"
-    concat_list.write_text(
-        "\n".join(f"file '{p.name}'" for p in segment_paths)
-    )
+    if IS_WINDOWS:
+        concat_list.write_text(
+            "\n".join(f"file {p.name}" for p in segment_paths)
+        )
+    else:
+        concat_list.write_text(
+            "\n".join(f"file '{p.name}'" for p in segment_paths)
+        )
     concat_video = episode_dir / "_concat.mp4"
     subprocess.run(
         [
@@ -128,7 +155,7 @@ def build_video(clips: list[dict], episode_dir: Path) -> Path:
         if filter_parts:
             # Mix all audio tracks
             mix_inputs = "".join(f"[a{i}]" for i in range(1, input_idx))
-            filter_complex = ";".join(filter_parts) + f";{mix_inputs}amix=inputs={input_idx - 1}:dropout_transition=0[aout]"
+            filter_complex = ";".join(filter_parts) + f";{mix_inputs}amix=inputs={input_idx - 1}:dropout_transition=0:normalize=0[aout]"
 
             subprocess.run(
                 [

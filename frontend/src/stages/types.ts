@@ -13,6 +13,7 @@ export interface ScriptLine {
   text_en: string;
   text_pinyin: string;
   direction?: string | null;
+  emotion: string;
 }
 
 export interface ContextData {
@@ -85,6 +86,7 @@ export interface TimelineClip {
 export interface IntroData {
   title_zh: string;
   title_en: string;
+  title_pinyin: string;
   character_id: string;
   tts_text: string;
   image_file: string;
@@ -92,11 +94,16 @@ export interface IntroData {
   audio_duration_ms: number;
   tts_generated: boolean;
   image_uploaded: boolean;
+  speed: number;
+  video_file: string;
+  video_uploaded: boolean;
+  video_duration_ms: number;
 }
 
 export interface TimelineData {
   clips: TimelineClip[];
   total_duration_ms: number;
+  scene_gap_ms: number;
   output_file: string;
   approved: boolean;
   intro: IntroData;
@@ -107,6 +114,7 @@ export interface ThumbnailData {
   image_file: string;
   generated: boolean;
   approved: boolean;
+  synopsis: string;
 }
 
 export interface EpisodeState {

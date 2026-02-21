@@ -3,16 +3,18 @@ const STATIC_BASE = 'http://localhost:8000/static/episodes';
 interface VideoPreviewProps {
   episodeId: string;
   outputFile: string;
+  cacheBust?: number;
 }
 
-export default function VideoPreview({ episodeId, outputFile }: VideoPreviewProps) {
+export default function VideoPreview({ episodeId, outputFile, cacheBust }: VideoPreviewProps) {
+  const t = cacheBust || 0;
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8 }}>
         Preview
       </div>
       <video
-        key={outputFile}
+        key={`${outputFile}-${t}`}
         controls
         style={{
           width: '100%',
@@ -23,7 +25,7 @@ export default function VideoPreview({ episodeId, outputFile }: VideoPreviewProp
         }}
       >
         <source
-          src={`${STATIC_BASE}/${episodeId}/${outputFile}`}
+          src={`${STATIC_BASE}/${episodeId}/${outputFile}?t=${t}`}
           type="video/mp4"
         />
       </video>

@@ -15,6 +15,7 @@ Write a full script for this episode. Rules:
 - Chinese dialogue should use HSK 1-3 vocabulary (simple, everyday language)
 - Each line should be natural spoken Chinese
 - Include stage directions as "direction" field when a character enters, exits, or does something notable
+- Include an emotion descriptor for each line (e.g. happy, sad, angry, excited, worried, neutral, curious, surprised, embarrassed)
 - Aim for 40-60 lines of dialogue
 - The script should tell the complete story from the idea
 
@@ -26,14 +27,16 @@ Return a JSON object:
       "text_zh": "妈妈，今天晚上吃什么？",
       "text_en": "Mom, what are we eating tonight?",
       "text_pinyin": "Māma, jīntiān wǎnshang chī shénme?",
-      "direction": "Siyuan walks into the kitchen"
+      "direction": "Siyuan walks into the kitchen",
+      "emotion": "curious"
     }},
     {{
       "character_id": "佳敏",
       "text_zh": "我们吃饺子！",
       "text_en": "We're having dumplings!",
       "text_pinyin": "Wǒmen chī jiǎozi!",
-      "direction": ""
+      "direction": "",
+      "emotion": "excited"
     }}
   ]
 }}

@@ -4,6 +4,7 @@ import { useEpisodeStore } from '../../state/episodeStore';
 import {
   initializeTimeline,
   updateTimelineClips,
+  reflowTimeline,
   exportTimeline,
   approveTimeline,
   unapproveStage,
@@ -42,7 +43,10 @@ function StitchStage({ episodeId }: StageComponentProps) {
   const [phase, setPhase] = useState<Phase>(initialPhase);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportCacheBust, setExportCacheBust] = useState(Date.now());
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [sceneGapMs, setSceneGapMs] = useState(timeline?.scene_gap_ms || 1000);
+  const [reflowing, setReflowing] = useState(false);
 
   useEffect(() => {
     if (phase === 'initializing') {
@@ -108,6 +112,7 @@ function StitchStage({ episodeId }: StageComponentProps) {
         output_file: result.output_file,
         total_duration_ms: result.total_duration_ms,
       });
+      setExportCacheBust(Date.now());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Export failed');
     } finally {
@@ -177,6 +182,51 @@ function StitchStage({ episodeId }: StageComponentProps) {
             selectedClipId={selectedClipId}
           />
 
+          {/* Scene gap control */}
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              border: '1px solid var(--border-color)',
+              borderRadius: 2,
+              background: 'var(--bg-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+            }}
+          >
+            <label style={{ fontSize: 12, color: 'var(--text-primary)', flexShrink: 0 }}>
+              Scene Gap — {(sceneGapMs / 1000).toFixed(1)}s
+              <input
+                type="range"
+                min={200}
+                max={3000}
+                step={100}
+                value={sceneGapMs}
+                onChange={(e) => setSceneGapMs(parseInt(e.target.value, 10))}
+                style={{ display: 'block', width: 200, marginTop: 4 }}
+              />
+            </label>
+            <button
+              onClick={async () => {
+                setReflowing(true);
+                setError(null);
+                try {
+                  const result = await reflowTimeline(episodeId, sceneGapMs);
+                  setTimelineData(result);
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : 'Reflow failed');
+                } finally {
+                  setReflowing(false);
+                }
+              }}
+              disabled={reflowing}
+              style={{ ...btnStyle, flexShrink: 0 }}
+            >
+              {reflowing ? 'Applying...' : 'Apply to All Scenes'}
+            </button>
+          </div>
+
           {/* Zoom editor for selected scene clip */}
           {selectedClip && (
             <div
@@ -228,7 +278,7 @@ function StitchStage({ episodeId }: StageComponentProps) {
 
           {/* Video preview */}
           {timeline?.output_file && (
-            <VideoPreview episodeId={episodeId} outputFile={timeline.output_file} />
+            <VideoPreview episodeId={episodeId} outputFile={timeline.output_file} cacheBust={exportCacheBust} />
           )}
 
           <div

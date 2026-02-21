@@ -132,6 +132,7 @@ export default function EpisodeMenu({ onSelect }: EpisodeMenuProps) {
         </div>
       )}
 
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
       <button
         onClick={handleCreate}
         disabled={creating}
@@ -156,6 +157,22 @@ export default function EpisodeMenu({ onSelect }: EpisodeMenuProps) {
       >
         {creating ? '> Creating...' : '> New Episode'}
       </button>
+      <a
+        href="https://www.youtube.com/@lilaoshi230"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          ...linkStyle,
+          color: 'var(--text-dim)',
+          fontSize: 12,
+          textDecoration: 'none',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-dim)'; }}
+      >
+        YouTube Channel
+      </a>
+      </div>
     </div>
   );
 }

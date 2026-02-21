@@ -7,6 +7,8 @@ import {
   generateThumbnail,
   revertThumbnail,
   approveThumbnail,
+  generateSynopsis,
+  updateSynopsis,
 } from '../../api/stages';
 import { registerStage } from '../stageRegistry';
 import ProgressBar from '../../components/ProgressBar';
@@ -30,6 +32,9 @@ function ThumbnailStage({ episodeId }: StageComponentProps) {
 
   const [phase, setPhase] = useState<Phase>(initialPhase);
   const [prompt, setPrompt] = useState(thumbnail?.prompt || '');
+  const [synopsis, setSynopsis] = useState(thumbnail?.synopsis || '');
+  const [generatingSynopsis, setGeneratingSynopsis] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Auto-initialize: generate prompt from story on mount
@@ -88,6 +93,35 @@ function ThumbnailStage({ episodeId }: StageComponentProps) {
     }
   };
 
+  const handleGenerateSynopsis = async () => {
+    setGeneratingSynopsis(true);
+    setError(null);
+    try {
+      const result = await generateSynopsis(episodeId);
+      setThumbnailData(result);
+      setSynopsis(result.synopsis);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Synopsis generation failed');
+    } finally {
+      setGeneratingSynopsis(false);
+    }
+  };
+
+  const handleSynopsisBlur = async () => {
+    if (synopsis !== thumbnail?.synopsis) {
+      try {
+        const result = await updateSynopsis(episodeId, synopsis);
+        setThumbnailData(result);
+      } catch {}
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(synopsis);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleApprove = async () => {
     setError(null);
     try {
@@ -122,6 +156,45 @@ function ThumbnailStage({ episodeId }: StageComponentProps) {
             }}
           />
         )}
+
+        {/* Synopsis */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+              YOUTUBE DESCRIPTION
+            </span>
+            <button
+              onClick={handleGenerateSynopsis}
+              disabled={generatingSynopsis}
+              style={{ ...btnStyle, opacity: generatingSynopsis ? 0.5 : 1 }}
+            >
+              {generatingSynopsis ? 'Generating...' : synopsis ? 'Regenerate' : 'Generate'}
+            </button>
+            {synopsis && (
+              <button onClick={handleCopy} style={btnStyle}>
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            )}
+          </div>
+          <textarea
+            value={synopsis}
+            onChange={(e) => setSynopsis(e.target.value)}
+            onBlur={handleSynopsisBlur}
+            placeholder="Generate or write a YouTube description..."
+            style={{
+              width: '100%',
+              minHeight: 100,
+              background: 'var(--bg-primary)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 12,
+              padding: 8,
+              borderRadius: 2,
+              resize: 'vertical',
+            }}
+          />
+        </div>
       </div>
     );
   }
@@ -187,6 +260,45 @@ function ThumbnailStage({ episodeId }: StageComponentProps) {
               />
             </div>
           )}
+
+          {/* Synopsis */}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                YOUTUBE DESCRIPTION
+              </span>
+              <button
+                onClick={handleGenerateSynopsis}
+                disabled={generatingSynopsis}
+                style={{ ...btnStyle, opacity: generatingSynopsis ? 0.5 : 1 }}
+              >
+                {generatingSynopsis ? 'Generating...' : synopsis ? 'Regenerate' : 'Generate'}
+              </button>
+              {synopsis && (
+                <button onClick={handleCopy} style={btnStyle}>
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              )}
+            </div>
+            <textarea
+              value={synopsis}
+              onChange={(e) => setSynopsis(e.target.value)}
+              onBlur={handleSynopsisBlur}
+              placeholder="Generate or write a YouTube description..."
+              style={{
+                width: '100%',
+                minHeight: 100,
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                padding: 8,
+                borderRadius: 2,
+                resize: 'vertical',
+              }}
+            />
+          </div>
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>

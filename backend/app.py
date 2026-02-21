@@ -1,8 +1,11 @@
 import json
+import logging
 import shutil
 import traceback
 from datetime import datetime
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO)
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
@@ -13,9 +16,10 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from config import EPISODES_DIR, CHARACTERS_DIR, SETTINGS_DIR, TEMPLATES_DIR
+from config import EPISODES_DIR, CHARACTERS_DIR, SETTINGS_DIR, TEMPLATES_DIR, SHORTS_DIR
 from models import EpisodeState, EpisodeSummary
 from stages.registry import discover_stages, mount_stage_routers
+from shorts.routes import router as shorts_router
 
 
 class CatchAllExceptionMiddleware(BaseHTTPMiddleware):
@@ -47,12 +51,15 @@ app.add_middleware(CatchAllExceptionMiddleware)
 
 stages = discover_stages()
 mount_stage_routers(app, stages)
+app.include_router(shorts_router)
 
 # Static file serving for episode assets, character refs, setting refs
 app.mount("/static/episodes", StaticFiles(directory=str(EPISODES_DIR)), name="episodes_static")
 app.mount("/static/characters", StaticFiles(directory=str(CHARACTERS_DIR)), name="characters_static")
 app.mount("/static/settings", StaticFiles(directory=str(SETTINGS_DIR)), name="settings_static")
 app.mount("/static/templates", StaticFiles(directory=str(TEMPLATES_DIR)), name="templates_static")
+SHORTS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static/shorts", StaticFiles(directory=str(SHORTS_DIR)), name="shorts_static")
 
 
 # --- Global routes ---
