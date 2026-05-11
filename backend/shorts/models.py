@@ -18,6 +18,17 @@ class ShortConfig(BaseModel):
     music_file: str = ""
     music_volume: float = 0.15
     art_style: str = ""
+    pause_after_question: float = 1.0
+    pause_between_items: float = 0.8
+    sentence_mode: str = "sentence"  # "sentence" | "repeat"
+    repeat_count: int = 5
+    timer_duration: float = 5.0
+    reveal_hold: float = 1.5
+    sfx_timer: str = ""        # SFX filename for timer countdown
+    sfx_reveal: str = ""       # SFX filename for answer reveal
+    sfx_correct: str = ""      # SFX filename for correct answer
+    sfx_wrong: str = ""        # SFX filename for wrong answer
+    sfx_transition: str = ""   # SFX filename for item transitions
 
 
 class FlashcardItem(BaseModel):
@@ -36,7 +47,12 @@ class FlashcardItem(BaseModel):
     tts_sentence_file: str = ""
     tts_answer_duration_ms: int = 0
     tts_sentence_duration_ms: int = 0
+    tts_repeat_files: list[str] = []
+    tts_repeat_durations_ms: list[int] = []
     tts_generated: bool = False
+    wrong_sentence_zh: str = ""
+    wrong_sentence_pinyin: str = ""
+    wrong_sentence_en: str = ""
 
 
 class ShortState(BaseModel):

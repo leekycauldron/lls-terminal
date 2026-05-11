@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useShortsStore } from '../shortsStore';
 import { generateImage, generateAllImages, revertImage, generateTTS, approveAssets } from '../api';
+import { playDone } from '../../utils/sound';
 
 interface AssetsStepProps {
   shortId: string;
@@ -17,8 +18,12 @@ export default function AssetsStep({ shortId }: AssetsStepProps) {
   const [error, setError] = useState<string | null>(null);
 
   const items = state?.items || [];
+  const isWhichOne = state?.theme === 'which_one';
   const allImagesGenerated = items.every((i) => i.image_generated);
   const allTTSGenerated = items.every((i) => i.tts_generated) && !!state?.tts_question_file;
+
+  // For which_one theme, images are not needed
+  const imagesReady = isWhichOne || allImagesGenerated;
 
   const handleGenerateImage = async (itemId: string) => {
     setGeneratingImage(itemId);
@@ -26,6 +31,7 @@ export default function AssetsStep({ shortId }: AssetsStepProps) {
     try {
       const updated = await generateImage(shortId, itemId);
       updateItem(itemId, updated);
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to generate image');
     } finally {
@@ -39,6 +45,7 @@ export default function AssetsStep({ shortId }: AssetsStepProps) {
     try {
       const result = await generateAllImages(shortId);
       setItems(result.items);
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to generate images');
     } finally {
@@ -61,6 +68,7 @@ export default function AssetsStep({ shortId }: AssetsStepProps) {
     try {
       const updated = await generateTTS(shortId);
       setState(updated);
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to generate TTS');
     } finally {
@@ -90,97 +98,106 @@ export default function AssetsStep({ shortId }: AssetsStepProps) {
         Asset Generation
       </div>
 
-      {/* Image section */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
-            Images ({items.filter((i) => i.image_generated).length}/{items.length})
-          </div>
-          <button
-            onClick={handleGenerateAll}
-            disabled={generatingAll || allImagesGenerated}
-            style={linkBtnStyle}
-          >
-            {generatingAll ? '[generating all...]' : '[generate all images]'}
-          </button>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: 12,
-        }}>
-          {items.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                border: '1px solid var(--border-color)',
-                borderRadius: 2,
-                overflow: 'hidden',
-              }}
+      {/* Image section — hidden for which_one theme */}
+      {!isWhichOne && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
+              Images ({items.filter((i) => i.image_generated).length}/{items.length})
+            </div>
+            <button
+              onClick={handleGenerateAll}
+              disabled={generatingAll || allImagesGenerated}
+              style={linkBtnStyle}
             >
-              <div style={{
-                width: '100%',
-                aspectRatio: '1',
-                background: 'var(--bg-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-              }}>
-                {item.image_generated && item.image_file ? (
-                  <img
-                    src={`${STATIC_BASE}/${shortId}/${item.image_file}?t=${Date.now()}`}
-                    alt={item.word_en}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : generatingImage === item.id || generatingAll ? (
-                  <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>Generating...</span>
-                ) : (
-                  <span style={{ color: 'var(--text-dim)', fontSize: 24 }}>?</span>
-                )}
-              </div>
-              <div style={{ padding: '6px 8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--accent)', fontSize: 16 }}>{item.word_zh}</span>
-                  <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{item.word_en}</span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                  {item.image_generated ? (
-                    <>
-                      <button
-                        onClick={() => handleGenerateImage(item.id)}
-                        disabled={generatingImage === item.id}
-                        style={linkBtnStyle}
-                      >
-                        [regen]
-                      </button>
-                      <button
-                        onClick={() => handleRevertImage(item.id)}
-                        style={{ ...linkBtnStyle, color: 'var(--danger)' }}
-                      >
-                        [revert]
-                      </button>
-                    </>
+              {generatingAll ? '[generating all...]' : '[generate all images]'}
+            </button>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gap: 12,
+          }}>
+            {items.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  background: 'var(--bg-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                }}>
+                  {item.image_generated && item.image_file ? (
+                    <img
+                      src={`${STATIC_BASE}/${shortId}/${item.image_file}?t=${Date.now()}`}
+                      alt={item.word_en}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : generatingImage === item.id || generatingAll ? (
+                    <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>Generating...</span>
                   ) : (
-                    <button
-                      onClick={() => handleGenerateImage(item.id)}
-                      disabled={generatingImage !== null || generatingAll}
-                      style={linkBtnStyle}
-                    >
-                      [generate]
-                    </button>
+                    <span style={{ color: 'var(--text-dim)', fontSize: 24 }}>?</span>
                   )}
                 </div>
-                {/* TTS status */}
-                <div style={{ marginTop: 4, fontSize: 10, color: item.tts_generated ? 'var(--success)' : 'var(--text-dim)' }}>
-                  TTS: {item.tts_generated ? 'done' : 'pending'}
+                <div style={{ padding: '6px 8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--accent)', fontSize: 16 }}>{item.word_zh}</span>
+                    <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{item.word_en}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    {item.image_generated ? (
+                      <>
+                        <button
+                          onClick={() => handleGenerateImage(item.id)}
+                          disabled={generatingImage === item.id}
+                          style={linkBtnStyle}
+                        >
+                          [regen]
+                        </button>
+                        <button
+                          onClick={() => handleRevertImage(item.id)}
+                          style={{ ...linkBtnStyle, color: 'var(--danger)' }}
+                        >
+                          [revert]
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleGenerateImage(item.id)}
+                        disabled={generatingImage !== null || generatingAll}
+                        style={linkBtnStyle}
+                      >
+                        [generate]
+                      </button>
+                    )}
+                  </div>
+                  {/* TTS status */}
+                  <div style={{ marginTop: 4, fontSize: 10, color: item.tts_generated ? 'var(--success)' : 'var(--text-dim)' }}>
+                    TTS: {item.tts_generated ? 'done' : 'pending'}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* For which_one: show a note that no images are needed */}
+      {isWhichOne && (
+        <div style={{ marginBottom: 24, color: 'var(--text-dim)', fontSize: 12, fontStyle: 'italic' }}>
+          Text-only theme — no images required.
+        </div>
+      )}
 
       {/* TTS section */}
       <div style={{ marginBottom: 24 }}>
@@ -207,19 +224,19 @@ export default function AssetsStep({ shortId }: AssetsStepProps) {
 
       <button
         onClick={handleApprove}
-        disabled={approving || !allImagesGenerated || !allTTSGenerated}
+        disabled={approving || !imagesReady || !allTTSGenerated}
         style={{
           ...btnStyle,
-          opacity: !allImagesGenerated || !allTTSGenerated ? 0.5 : 1,
+          opacity: !imagesReady || !allTTSGenerated ? 0.5 : 1,
         }}
       >
         {approving ? '> Approving...' : '> Approve Assets'}
       </button>
 
-      {(!allImagesGenerated || !allTTSGenerated) && (
+      {(!imagesReady || !allTTSGenerated) && (
         <div style={{ color: 'var(--text-dim)', fontSize: 11, marginTop: 8 }}>
-          {!allImagesGenerated && 'Generate all images'}
-          {!allImagesGenerated && !allTTSGenerated && ' and '}
+          {!imagesReady && 'Generate all images'}
+          {!imagesReady && !allTTSGenerated && ' and '}
           {!allTTSGenerated && 'generate all TTS'}
           {' before approving.'}
         </div>

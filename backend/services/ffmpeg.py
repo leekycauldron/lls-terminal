@@ -18,7 +18,10 @@ def get_audio_duration_ms(path: Path) -> int:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
+    if result.returncode != 0:
+        raise RuntimeError(f"ffprobe failed: {result.stderr}")
     info = json.loads(result.stdout)
     duration_s = float(info["format"]["duration"])
     return int(duration_s * 1000)
@@ -115,11 +118,13 @@ def build_video(clips: list[dict], episode_dir: Path) -> Path:
     concat_list = episode_dir / "_concat.txt"
     if IS_WINDOWS:
         concat_list.write_text(
-            "\n".join(f"file {p.name}" for p in segment_paths)
+            "\n".join(f"file {p.name}" for p in segment_paths),
+            encoding="utf-8",
         )
     else:
         concat_list.write_text(
-            "\n".join(f"file '{p.name}'" for p in segment_paths)
+            "\n".join(f"file '{p.name}'" for p in segment_paths),
+            encoding="utf-8",
         )
     concat_video = episode_dir / "_concat.mp4"
     subprocess.run(

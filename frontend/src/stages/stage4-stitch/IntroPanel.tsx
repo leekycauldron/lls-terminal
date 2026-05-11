@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import type { IntroData, ContextData } from '../types';
 import { uploadIntroImage, uploadIntroVideo, updateIntro, generateIntroTTS, generateIntroTitle, fixIntroTitle } from '../../api/stages';
+import { playDone } from '../../utils/sound';
 
 interface IntroPanelProps {
   episodeId: string;
@@ -78,6 +79,7 @@ export default function IntroPanel({
     try {
       const result = await generateIntroTitle(episodeId);
       onIntroUpdate(result);
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Title generation failed');
     } finally {
@@ -126,6 +128,7 @@ export default function IntroPanel({
       const result = await generateIntroTTS(episodeId);
       onIntroUpdate(result);
       setCacheBust(Date.now());
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'TTS generation failed');
     } finally {

@@ -12,6 +12,7 @@ import {
   unapproveStage,
 } from '../../api/stages';
 import { registerStage } from '../stageRegistry';
+import { playDone } from '../../utils/sound';
 import SeedInput from './SeedInput';
 import ConflictWarning from './ConflictWarning';
 import LineEditor from './LineEditor';
@@ -71,6 +72,7 @@ function ScriptStage({ episodeId }: StageComponentProps) {
       setIdea(result.idea);
       setScriptIdea(result.idea);
       setIdeaDetails({ characters_used: result.characters_used, settings_used: result.settings_used });
+      playDone();
       setPhase('idea-review');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Idea generation failed');
@@ -84,6 +86,7 @@ function ScriptStage({ episodeId }: StageComponentProps) {
     try {
       const result = await generateScript(episodeId, idea);
       setScriptLines(result);
+      playDone();
       setPhase('editing');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Script generation failed');

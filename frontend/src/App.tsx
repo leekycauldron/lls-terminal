@@ -5,6 +5,7 @@ import StageRouter from './stages/StageRouter';
 import EpisodeMenu from './components/EpisodeMenu';
 import ShortsMenu from './shorts/ShortsMenu';
 import ShortsWorkflow from './shorts/ShortsWorkflow';
+import CaptionsDesigner from './captions/CaptionsDesigner';
 import { useEpisodeStore } from './state/episodeStore';
 import { useShortsStore } from './shorts/shortsStore';
 import { listStages, getEpisode } from './api/stages';
@@ -16,7 +17,7 @@ interface StageInfo {
   name: string;
 }
 
-type AppMode = 'episodes' | 'shorts';
+type AppMode = 'episodes' | 'shorts' | 'captions';
 
 export default function App() {
   const [stages, setStages] = useState<StageInfo[]>([]);
@@ -104,7 +105,7 @@ export default function App() {
     }
   };
 
-  const isActive = mode === 'episodes' ? !!episodeId : !!shortId;
+  const isActive = mode === 'episodes' ? !!episodeId : mode === 'shorts' ? !!shortId : false;
 
   if (error && !isActive) {
     return (
@@ -174,7 +175,7 @@ export default function App() {
             marginBottom: 16,
             borderBottom: '1px solid var(--border-color)',
           }}>
-            {(['episodes', 'shorts'] as const).map((m) => (
+            {(['episodes', 'shorts', 'captions'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => handleSwitchMode(m)}
@@ -199,8 +200,10 @@ export default function App() {
           {/* Menu content */}
           {mode === 'episodes' ? (
             <EpisodeMenu onSelect={handleSelectEpisode} />
-          ) : (
+          ) : mode === 'shorts' ? (
             <ShortsMenu onSelect={handleSelectShort} />
+          ) : (
+            <CaptionsDesigner />
           )}
         </div>
       ) : mode === 'episodes' && episodeId ? (

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useShortsStore } from '../shortsStore';
 import { exportVideo, approveShort } from '../api';
+import { playDone } from '../../utils/sound';
 
 interface ExportStepProps {
   shortId: string;
@@ -24,6 +25,7 @@ export default function ExportStep({ shortId }: ExportStepProps) {
       if (state) {
         setState({ ...state, output_file: result.output_file });
       }
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to export video');
     } finally {

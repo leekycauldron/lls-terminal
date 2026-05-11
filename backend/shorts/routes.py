@@ -6,35 +6,40 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from config import SHORTS_DIR
+from fastapi import UploadFile, File as FastAPIFile
+
+from config import SHORTS_DIR, SHORTS_CODE_DIR
 from shorts.models import ShortState, ShortSummary, ShortConfig, FlashcardItem
+from shorts.caption_models import CaptionConfig
+from shorts.caption_presets import PRESETS as CAPTION_PRESETS
 
 router = APIRouter(prefix="/api/shorts", tags=["shorts"])
 
 REGISTRY_PATH = SHORTS_DIR / "registry.json"
+CAPTIONS_CONFIG_PATH = SHORTS_DIR / "captions_config.json"
 
 
 def _load_registry() -> list[dict]:
     if not REGISTRY_PATH.exists():
         return []
-    return json.loads(REGISTRY_PATH.read_text())
+    return json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
 
 
 def _save_registry(registry: list[dict]) -> None:
     SHORTS_DIR.mkdir(parents=True, exist_ok=True)
-    REGISTRY_PATH.write_text(json.dumps(registry, indent=2))
+    REGISTRY_PATH.write_text(json.dumps(registry, indent=2), encoding="utf-8")
 
 
 def _load_state(short_id: str) -> ShortState:
     state_path = SHORTS_DIR / short_id / "state.json"
     if not state_path.exists():
         raise HTTPException(404, f"Short {short_id} not found")
-    return ShortState(**json.loads(state_path.read_text()))
+    return ShortState(**json.loads(state_path.read_text(encoding="utf-8")))
 
 
 def _save_state(short_id: str, state: ShortState) -> None:
     state_path = SHORTS_DIR / short_id / "state.json"
-    state_path.write_text(state.model_dump_json(indent=2))
+    state_path.write_text(state.model_dump_json(indent=2), encoding="utf-8")
 
 
 # --- CRUD ---
@@ -73,6 +78,83 @@ async def create_short(req: CreateShortRequest) -> ShortSummary:
     registry.append(summary.model_dump())
     _save_registry(registry)
     return summary
+
+
+# --- Captions Config (must be before /{short_id} routes) ---
+
+
+def _load_captions_config() -> CaptionConfig:
+    if CAPTIONS_CONFIG_PATH.exists():
+        data = json.loads(CAPTIONS_CONFIG_PATH.read_text(encoding="utf-8"))
+        return CaptionConfig(**data)
+    return CaptionConfig()
+
+
+def _save_captions_config(config: CaptionConfig) -> None:
+    SHORTS_DIR.mkdir(parents=True, exist_ok=True)
+    CAPTIONS_CONFIG_PATH.write_text(
+        config.model_dump_json(indent=2), encoding="utf-8"
+    )
+
+
+@router.get("/captions-config")
+async def get_captions_config() -> CaptionConfig:
+    return _load_captions_config()
+
+
+@router.put("/captions-config")
+async def update_captions_config(config: CaptionConfig) -> CaptionConfig:
+    _save_captions_config(config)
+    return config
+
+
+@router.get("/captions-presets")
+async def list_captions_presets() -> dict[str, CaptionConfig]:
+    return {name: factory() for name, factory in CAPTION_PRESETS.items()}
+
+
+# --- SFX Audio Library ---
+
+SFX_DIR = SHORTS_CODE_DIR / "sfx"
+
+
+@router.get("/sfx-library")
+async def list_sfx():
+    """List all MP3 files in the SFX library."""
+    SFX_DIR.mkdir(parents=True, exist_ok=True)
+    files = sorted(
+        f.name for f in SFX_DIR.iterdir()
+        if f.is_file() and f.suffix.lower() in (".mp3", ".wav", ".ogg")
+    )
+    return {"files": files}
+
+
+@router.post("/sfx-library/upload")
+async def upload_sfx(file: UploadFile = FastAPIFile(...)):
+    """Upload an audio file to the SFX library."""
+    SFX_DIR.mkdir(parents=True, exist_ok=True)
+    if not file.filename:
+        raise HTTPException(400, "No filename provided")
+    ext = Path(file.filename).suffix.lower()
+    if ext not in (".mp3", ".wav", ".ogg"):
+        raise HTTPException(400, f"Unsupported format: {ext}. Use .mp3, .wav, or .ogg")
+    dest = SFX_DIR / file.filename
+    content = await file.read()
+    dest.write_bytes(content)
+    return {"filename": file.filename}
+
+
+@router.delete("/sfx-library/{filename}")
+async def delete_sfx(filename: str):
+    """Delete an audio file from the SFX library."""
+    path = SFX_DIR / filename
+    if not path.exists():
+        raise HTTPException(404, f"SFX file {filename} not found")
+    path.unlink()
+    return {"deleted": filename}
+
+
+# --- Individual short ---
 
 
 @router.get("/{short_id}")
@@ -220,9 +302,9 @@ async def generate_tts(short_id: str):
         raise HTTPException(400, "Voice ID must be set before generating TTS")
     short_dir = SHORTS_DIR / short_id
 
-    # Generate shared question TTS
+    # Generate shared question TTS (theme-aware)
     if not state.tts_question_file:
-        q_file, q_dur = generate_question_tts(state.config, short_dir)
+        q_file, q_dur = generate_question_tts(state.config, short_dir, theme=state.theme)
         state.tts_question_file = q_file
         state.tts_question_duration_ms = q_dur
         _save_state(short_id, state)
@@ -239,12 +321,14 @@ async def generate_tts(short_id: str):
 @router.post("/{short_id}/approve-assets")
 async def approve_assets(short_id: str):
     state = _load_state(short_id)
-    all_images = all(i.image_generated for i in state.items)
     all_tts = all(i.tts_generated for i in state.items)
-    if not all_images:
-        raise HTTPException(400, "Not all images have been generated")
     if not all_tts:
         raise HTTPException(400, "Not all TTS clips have been generated")
+    # Images only required for whats_this theme
+    if state.theme != "which_one":
+        all_images = all(i.image_generated for i in state.items)
+        if not all_images:
+            raise HTTPException(400, "Not all images have been generated")
     state.assets_approved = True
     state.current_step = "export"
     _save_state(short_id, state)

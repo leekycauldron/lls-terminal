@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useShortsStore } from '../shortsStore';
 import { updateItems, approveContent, generateContent } from '../api';
 import type { FlashcardItem } from '../types';
+import { playDone } from '../../utils/sound';
 
 interface ContentStepProps {
   shortId: string;
@@ -17,6 +18,7 @@ export default function ContentStep({ shortId }: ContentStepProps) {
   const [error, setError] = useState<string | null>(null);
 
   const items = state?.items || [];
+  const isWhichOne = state?.theme === 'which_one';
 
   const startEdit = (item: FlashcardItem) => {
     setEditingId(item.id);
@@ -28,6 +30,11 @@ export default function ContentStep({ shortId }: ContentStepProps) {
       sentence_pinyin: item.sentence_pinyin,
       sentence_en: item.sentence_en,
       image_prompt: item.image_prompt,
+      ...(isWhichOne ? {
+        wrong_sentence_zh: item.wrong_sentence_zh,
+        wrong_sentence_pinyin: item.wrong_sentence_pinyin,
+        wrong_sentence_en: item.wrong_sentence_en,
+      } : {}),
     });
   };
 
@@ -80,6 +87,7 @@ export default function ContentStep({ shortId }: ContentStepProps) {
     try {
       const result = await generateContent(shortId, items.length || 6);
       setItems(result.items);
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to regenerate');
     } finally {
@@ -160,7 +168,7 @@ export default function ContentStep({ shortId }: ContentStepProps) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
                 <div>
-                  <label style={labelStyle}>Sentence (Chinese)</label>
+                  <label style={labelStyle}>Correct Sentence (Chinese)</label>
                   <input
                     value={editForm.sentence_zh || ''}
                     onChange={(e) => setEditForm({ ...editForm, sentence_zh: e.target.value })}
@@ -184,8 +192,36 @@ export default function ContentStep({ shortId }: ContentStepProps) {
                   />
                 </div>
               </div>
+              {isWhichOne && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+                  <div>
+                    <label style={{ ...labelStyle, color: 'var(--danger)' }}>Wrong Sentence (Chinese)</label>
+                    <input
+                      value={editForm.wrong_sentence_zh || ''}
+                      onChange={(e) => setEditForm({ ...editForm, wrong_sentence_zh: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, color: 'var(--danger)' }}>Wrong (Pinyin)</label>
+                    <input
+                      value={editForm.wrong_sentence_pinyin || ''}
+                      onChange={(e) => setEditForm({ ...editForm, wrong_sentence_pinyin: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, color: 'var(--danger)' }}>Wrong (English)</label>
+                    <input
+                      value={editForm.wrong_sentence_en || ''}
+                      onChange={(e) => setEditForm({ ...editForm, wrong_sentence_en: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+              )}
               <div style={{ marginBottom: 8 }}>
-                <label style={labelStyle}>Image Prompt</label>
+                <label style={labelStyle}>{isWhichOne ? 'Error Explanation' : 'Image Prompt'}</label>
                 <textarea
                   value={editForm.image_prompt || ''}
                   onChange={(e) => setEditForm({ ...editForm, image_prompt: e.target.value })}
@@ -201,18 +237,28 @@ export default function ContentStep({ shortId }: ContentStepProps) {
             </div>
           ) : (
             /* View mode */
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ color: 'var(--text-dim)', fontSize: 11, width: 20 }}>{item.order + 1}.</span>
-              <span style={{ color: 'var(--accent)', fontSize: 20, minWidth: 60 }}>{item.word_zh}</span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: 13, minWidth: 80 }}>{item.word_pinyin}</span>
-              <span style={{ color: 'var(--text-dim)', fontSize: 13, flex: 1 }}>{item.word_en}</span>
-              <span style={{ color: 'var(--text-dim)', fontSize: 11, flex: 2 }}>{item.sentence_zh}</span>
-              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                <button onClick={() => moveItem(item.id, -1)} style={linkBtnStyle} disabled={item.order === 0}>[^]</button>
-                <button onClick={() => moveItem(item.id, 1)} style={linkBtnStyle} disabled={item.order === items.length - 1}>[v]</button>
-                <button onClick={() => startEdit(item)} style={linkBtnStyle}>[edit]</button>
-                <button onClick={() => deleteItem(item.id)} style={{ ...linkBtnStyle, color: 'var(--danger)' }}>[x]</button>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ color: 'var(--text-dim)', fontSize: 11, width: 20 }}>{item.order + 1}.</span>
+                <span style={{ color: 'var(--accent)', fontSize: 20, minWidth: 60 }}>{item.word_zh}</span>
+                <span style={{ color: 'var(--text-secondary)', fontSize: 13, minWidth: 80 }}>{item.word_pinyin}</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 13, flex: 1 }}>{item.word_en}</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 11, flex: 2 }}>{item.sentence_zh}</span>
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                  <button onClick={() => moveItem(item.id, -1)} style={linkBtnStyle} disabled={item.order === 0}>[^]</button>
+                  <button onClick={() => moveItem(item.id, 1)} style={linkBtnStyle} disabled={item.order === items.length - 1}>[v]</button>
+                  <button onClick={() => startEdit(item)} style={linkBtnStyle}>[edit]</button>
+                  <button onClick={() => deleteItem(item.id)} style={{ ...linkBtnStyle, color: 'var(--danger)' }}>[x]</button>
+                </div>
               </div>
+              {isWhichOne && item.wrong_sentence_zh && (
+                <div style={{ marginTop: 6, paddingLeft: 32 }}>
+                  <span style={{ color: '#FF4444', fontSize: 11 }}>Wrong: {item.wrong_sentence_zh}</span>
+                  {item.image_prompt && (
+                    <span style={{ color: '#FFFF44', fontSize: 11, marginLeft: 12 }}>({item.image_prompt})</span>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

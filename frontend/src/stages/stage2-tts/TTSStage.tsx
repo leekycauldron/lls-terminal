@@ -5,6 +5,7 @@ import {
   initializeTTS,
   generateTTSLine,
   revertTTSLine,
+  revertSelectedTTS,
   setTTSMode,
   setTTSSpeed,
   updateTTSLines,
@@ -14,6 +15,7 @@ import {
   suggestEmotions,
   unapproveStage,
 } from '../../api/stages';
+import { playDone } from '../../utils/sound';
 import { registerStage } from '../stageRegistry';
 import LineEditor from '../stage1-script/LineEditor';
 import AudioPlayer from './AudioPlayer';
@@ -50,6 +52,8 @@ function TTSStage({ episodeId }: StageComponentProps) {
   const [error, setError] = useState<string | null>(null);
   const [generatingLineId, setGeneratingLineId] = useState<string | null>(null);
   const [suggestingEmotions, setSuggestingEmotions] = useState(false);
+  const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
+  const [reverting, setReverting] = useState(false);
 
   // Initialize on mount if needed
   useEffect(() => {
@@ -92,6 +96,7 @@ function TTSStage({ episodeId }: StageComponentProps) {
       try {
         const result = await generateTTSLine(episodeId, lineId);
         setTTSLineStatus(lineId, result);
+        playDone();
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'TTS generation failed');
       } finally {
@@ -115,6 +120,7 @@ function TTSStage({ episodeId }: StageComponentProps) {
         setTTSLineStatus(line.id, result);
       }
       setGeneratingLineId(null);
+      playDone();
       setPhase('editing');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Auto TTS generation failed');
@@ -167,12 +173,55 @@ function TTSStage({ episodeId }: StageComponentProps) {
     try {
       const result = await suggestEmotions(episodeId);
       setScriptLines(result);
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to suggest emotions');
     } finally {
       setSuggestingEmotions(false);
     }
   };
+
+  const toggleLineSelection = useCallback((lineId: string) => {
+    setSelectedLines((prev) => {
+      const next = new Set(prev);
+      if (next.has(lineId)) next.delete(lineId);
+      else next.add(lineId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    const generatedIds = lines
+      .filter((l) => getStatus(l.id)?.generated)
+      .map((l) => l.id);
+    if (generatedIds.length === 0) return;
+    const allSelected = generatedIds.every((id) => selectedLines.has(id));
+    if (allSelected) {
+      setSelectedLines(new Set());
+    } else {
+      setSelectedLines(new Set(generatedIds));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lines, tts?.line_statuses, selectedLines]);
+
+  const handleRevertSelected = useCallback(async () => {
+    const toRevert = [...selectedLines].filter((id) => getStatus(id)?.generated);
+    if (toRevert.length === 0) return;
+    setReverting(true);
+    setError(null);
+    try {
+      const result = await revertSelectedTTS(episodeId, toRevert);
+      for (const lid of result.reverted) {
+        setTTSLineStatus(lid, { audio_file: '', duration_ms: 0, generated: false });
+      }
+      setSelectedLines(new Set());
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Revert selected failed');
+    } finally {
+      setReverting(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [episodeId, selectedLines, tts?.line_statuses, setTTSLineStatus]);
 
   // Line editing callbacks
   const handleReorder = useCallback(
@@ -254,6 +303,15 @@ function TTSStage({ episodeId }: StageComponentProps) {
 
       return (
         <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
+          {status?.generated && (
+            <input
+              type="checkbox"
+              checked={selectedLines.has(line.id)}
+              onChange={() => toggleLineSelection(line.id)}
+              style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+              title="Select for batch revert"
+            />
+          )}
           <select
             value={line.emotion || ''}
             onChange={(e) => handleEdit(line.id, { emotion: e.target.value })}
@@ -303,7 +361,7 @@ function TTSStage({ episodeId }: StageComponentProps) {
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tts?.line_statuses, generatingLineId, lastGeneratedIndex, episodeId, lines]
+    [tts?.line_statuses, generatingLineId, lastGeneratedIndex, episodeId, lines, selectedLines, toggleLineSelection]
   );
 
   const isAutoMode = tts?.mode === 'auto';
@@ -355,6 +413,16 @@ function TTSStage({ episodeId }: StageComponentProps) {
               await setTTSSpeed(episodeId, speed);
             }}
             generating={!!generatingLineId || phase === 'generating'}
+            selectedCount={[...selectedLines].filter((id) => getStatus(id)?.generated).length}
+            allSelectedChecked={
+              generatedCount > 0 &&
+              lines
+                .filter((l) => getStatus(l.id)?.generated)
+                .every((l) => selectedLines.has(l.id))
+            }
+            onToggleSelectAll={toggleSelectAll}
+            onRevertSelected={handleRevertSelected}
+            reverting={reverting}
           />
           <LineEditor
             lines={lines}

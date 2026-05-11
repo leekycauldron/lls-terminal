@@ -12,6 +12,7 @@ import {
   setArtStyle,
   unapproveStage,
 } from '../../api/stages';
+import { playDone } from '../../utils/sound';
 import { registerStage } from '../stageRegistry';
 import SceneEditor from './SceneEditor';
 import SceneLineOverlay from './SceneLineOverlay';
@@ -68,6 +69,7 @@ function ScenesStage({ episodeId }: StageComponentProps) {
     try {
       const result = await generateSceneBreakdown(episodeId);
       setScenesData(result);
+      playDone();
       setPhase('editing');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Breakdown generation failed');
@@ -97,6 +99,7 @@ function ScenesStage({ episodeId }: StageComponentProps) {
       try {
         const result = await generateSceneImage(episodeId, sceneId);
         updateScene(sceneId, { image_file: result.image_file, generated: true });
+        playDone();
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Image generation failed');
       } finally {
@@ -117,6 +120,7 @@ function ScenesStage({ episodeId }: StageComponentProps) {
         updateScene(scene.id, { image_file: result.image_file, generated: true });
       }
       setGeneratingSceneId(null);
+      playDone();
       setPhase('editing');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Auto image generation failed');

@@ -43,7 +43,7 @@ def format_settings(settings: dict) -> str:
 
 def generate_scene_breakdown(state: EpisodeState) -> list[Scene]:
     """Use LLM to break script into scenes."""
-    prompt_template = (PROMPTS_DIR / "scene_breakdown.txt").read_text()
+    prompt_template = (PROMPTS_DIR / "scene_breakdown.txt").read_text(encoding="utf-8")
     prompt = prompt_template.format(
         script_lines=format_script_lines(state),
         settings=format_settings(state.context.settings),

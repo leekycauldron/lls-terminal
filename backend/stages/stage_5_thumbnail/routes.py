@@ -18,12 +18,12 @@ def _load_state(ep_id: str) -> EpisodeState:
     state_path = EPISODES_DIR / ep_id / "state.json"
     if not state_path.exists():
         raise HTTPException(404, f"Episode {ep_id} not found")
-    return EpisodeState(**json.loads(state_path.read_text()))
+    return EpisodeState(**json.loads(state_path.read_text(encoding="utf-8")))
 
 
 def _save_state(ep_id: str, state: EpisodeState) -> None:
     state_path = EPISODES_DIR / ep_id / "state.json"
-    state_path.write_text(state.model_dump_json(indent=2))
+    state_path.write_text(state.model_dump_json(indent=2), encoding="utf-8")
 
 
 @router.post("/initialize")

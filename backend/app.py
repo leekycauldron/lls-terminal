@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from config import EPISODES_DIR, CHARACTERS_DIR, SETTINGS_DIR, TEMPLATES_DIR, SHORTS_DIR
+from config import EPISODES_DIR, CHARACTERS_DIR, SETTINGS_DIR, TEMPLATES_DIR, SHORTS_DIR, SHORTS_CODE_DIR
 from models import EpisodeState, EpisodeSummary
 from stages.registry import discover_stages, mount_stage_routers
 from shorts.routes import router as shorts_router
@@ -60,6 +60,9 @@ app.mount("/static/settings", StaticFiles(directory=str(SETTINGS_DIR)), name="se
 app.mount("/static/templates", StaticFiles(directory=str(TEMPLATES_DIR)), name="templates_static")
 SHORTS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static/shorts", StaticFiles(directory=str(SHORTS_DIR)), name="shorts_static")
+SFX_DIR = SHORTS_CODE_DIR / "sfx"
+SFX_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static/sfx", StaticFiles(directory=str(SFX_DIR)), name="sfx_static")
 
 
 # --- Global routes ---
@@ -79,7 +82,7 @@ async def list_episodes():
     registry_path = EPISODES_DIR / "registry.json"
     if not registry_path.exists():
         return []
-    return json.loads(registry_path.read_text())
+    return json.loads(registry_path.read_text(encoding="utf-8"))
 
 
 class CreateEpisodeRequest(BaseModel):
@@ -89,7 +92,7 @@ class CreateEpisodeRequest(BaseModel):
 @app.post("/api/episodes", response_model=EpisodeSummary)
 async def create_episode(req: CreateEpisodeRequest):
     registry_path = EPISODES_DIR / "registry.json"
-    registry: list[dict] = json.loads(registry_path.read_text()) if registry_path.exists() else []
+    registry: list[dict] = json.loads(registry_path.read_text(encoding="utf-8")) if registry_path.exists() else []
 
     ep_num = len(registry) + 1
     ep_id = f"ep_{ep_num:03d}"
@@ -97,7 +100,7 @@ async def create_episode(req: CreateEpisodeRequest):
     ep_dir.mkdir(parents=True, exist_ok=True)
 
     state = EpisodeState(id=ep_id, current_stage="stage_0_context")
-    (ep_dir / "state.json").write_text(state.model_dump_json(indent=2))
+    (ep_dir / "state.json").write_text(state.model_dump_json(indent=2), encoding="utf-8")
 
     summary = EpisodeSummary(
         id=ep_id,
@@ -106,7 +109,7 @@ async def create_episode(req: CreateEpisodeRequest):
         date=datetime.now().isoformat(),
     )
     registry.append(summary.model_dump())
-    registry_path.write_text(json.dumps(registry, indent=2))
+    registry_path.write_text(json.dumps(registry, indent=2), encoding="utf-8")
 
     return summary
 
@@ -116,19 +119,19 @@ async def get_episode(ep_id: str):
     state_path = EPISODES_DIR / ep_id / "state.json"
     if not state_path.exists():
         raise HTTPException(404, f"Episode {ep_id} not found")
-    return json.loads(state_path.read_text())
+    return json.loads(state_path.read_text(encoding="utf-8"))
 
 
 @app.delete("/api/episodes/{ep_id}")
 async def delete_episode(ep_id: str):
     registry_path = EPISODES_DIR / "registry.json"
-    registry: list[dict] = json.loads(registry_path.read_text()) if registry_path.exists() else []
+    registry: list[dict] = json.loads(registry_path.read_text(encoding="utf-8")) if registry_path.exists() else []
 
     if not any(ep["id"] == ep_id for ep in registry):
         raise HTTPException(404, f"Episode {ep_id} not found")
 
     registry = [ep for ep in registry if ep["id"] != ep_id]
-    registry_path.write_text(json.dumps(registry, indent=2))
+    registry_path.write_text(json.dumps(registry, indent=2), encoding="utf-8")
 
     ep_dir = EPISODES_DIR / ep_id
     if ep_dir.exists():
@@ -160,9 +163,9 @@ async def unapprove_stage(ep_id: str, req: UnapproveRequest):
     if not state_path.exists():
         raise HTTPException(404, f"Episode {ep_id} not found")
 
-    data = json.loads(state_path.read_text())
+    data = json.loads(state_path.read_text(encoding="utf-8"))
     data[field]["approved"] = False
     data["current_stage"] = req.stage
-    state_path.write_text(json.dumps(data, indent=2))
+    state_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     return {"stage": req.stage, "approved": False}

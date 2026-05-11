@@ -14,11 +14,11 @@ async def load_context(ep_id: str):
     if not state_path.exists():
         raise HTTPException(404, f"Episode {ep_id} not found")
 
-    characters = json.loads((CHARACTERS_DIR / "registry.json").read_text())
-    settings = json.loads((SETTINGS_DIR / "registry.json").read_text())
+    characters = json.loads((CHARACTERS_DIR / "registry.json").read_text(encoding="utf-8"))
+    settings = json.loads((SETTINGS_DIR / "registry.json").read_text(encoding="utf-8"))
 
     registry_path = EPISODES_DIR / "registry.json"
-    all_episodes: list[dict] = json.loads(registry_path.read_text()) if registry_path.exists() else []
+    all_episodes: list[dict] = json.loads(registry_path.read_text(encoding="utf-8")) if registry_path.exists() else []
     history = [ep for ep in all_episodes if ep["id"] != ep_id]
 
     # Enrich history with script summaries from each episode's state
@@ -27,7 +27,7 @@ async def load_context(ep_id: str):
         ep_state_path = EPISODES_DIR / ep["id"] / "state.json"
         summary_text = ep.get("summary", "")
         if ep_state_path.exists() and not summary_text:
-            ep_state = json.loads(ep_state_path.read_text())
+            ep_state = json.loads(ep_state_path.read_text(encoding="utf-8"))
             script = ep_state.get("script", {})
             summary_text = script.get("idea", "")
         enriched_history.append(EpisodeSummary(
@@ -44,8 +44,8 @@ async def load_context(ep_id: str):
     )
 
     # Update episode state with context
-    state = EpisodeState(**json.loads(state_path.read_text()))
+    state = EpisodeState(**json.loads(state_path.read_text(encoding="utf-8")))
     state.context = context
-    state_path.write_text(state.model_dump_json(indent=2))
+    state_path.write_text(state.model_dump_json(indent=2), encoding="utf-8")
 
     return context.model_dump()

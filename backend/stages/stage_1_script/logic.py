@@ -31,7 +31,7 @@ def format_episode_history(history: list[dict]) -> str:
 
 
 def check_seed(state: EpisodeState, seed: str) -> dict:
-    prompt_template = (PROMPTS_DIR / "seed_check.txt").read_text()
+    prompt_template = (PROMPTS_DIR / "seed_check.txt").read_text(encoding="utf-8")
     history = [ep.model_dump() for ep in state.context.episode_history]
     prompt = prompt_template.format(
         episode_history=format_episode_history(history),
@@ -44,7 +44,7 @@ def check_seed(state: EpisodeState, seed: str) -> dict:
 
 
 def generate_idea(state: EpisodeState, seed: str) -> dict:
-    prompt_template = (PROMPTS_DIR / "generate_idea.txt").read_text()
+    prompt_template = (PROMPTS_DIR / "generate_idea.txt").read_text(encoding="utf-8")
     history = [ep.model_dump() for ep in state.context.episode_history]
     prompt = prompt_template.format(
         characters=format_characters(state.context.characters),
@@ -59,7 +59,7 @@ def generate_idea(state: EpisodeState, seed: str) -> dict:
 
 
 def generate_script(state: EpisodeState, idea: str) -> list[ScriptLine]:
-    prompt_template = (PROMPTS_DIR / "generate_script.txt").read_text()
+    prompt_template = (PROMPTS_DIR / "generate_script.txt").read_text(encoding="utf-8")
     prompt = prompt_template.format(
         characters=format_characters(state.context.characters),
         settings=format_settings(state.context.settings),

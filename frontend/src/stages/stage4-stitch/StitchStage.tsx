@@ -10,6 +10,7 @@ import {
   unapproveStage,
   downloadCaptions,
 } from '../../api/stages';
+import { playDone } from '../../utils/sound';
 import { registerStage } from '../stageRegistry';
 import Timeline from './Timeline';
 import ExportButton from './ExportButton';
@@ -113,6 +114,7 @@ function StitchStage({ episodeId }: StageComponentProps) {
         total_duration_ms: result.total_duration_ms,
       });
       setExportCacheBust(Date.now());
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Export failed');
     } finally {

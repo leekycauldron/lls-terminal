@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ShortSummary } from './types';
 import { listShorts, createShort, deleteShort } from './api';
+import SfxLibrary from './SfxLibrary';
 
 interface ShortsMenuProps {
   onSelect: (shortId: string) => void;
@@ -135,6 +136,8 @@ export default function ShortsMenu({ onSelect }: ShortsMenuProps) {
           ))}
         </div>
       )}
+
+      <SfxLibrary />
 
       <button
         onClick={handleCreate}

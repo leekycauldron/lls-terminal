@@ -79,6 +79,27 @@ export async function approveAssets(shortId: string): Promise<{ assets_approved:
   return data;
 }
 
+// --- SFX Library ---
+
+export async function listSfx(): Promise<{ files: string[] }> {
+  const { data } = await client.get('/shorts/sfx-library');
+  return data;
+}
+
+export async function uploadSfx(file: File): Promise<{ filename: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await client.post('/shorts/sfx-library/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function deleteSfx(filename: string): Promise<{ deleted: string }> {
+  const { data } = await client.delete(`/shorts/sfx-library/${filename}`);
+  return data;
+}
+
 // --- Export ---
 
 export async function exportVideo(shortId: string): Promise<{ output_file: string }> {

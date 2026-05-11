@@ -10,6 +10,7 @@ import {
   generateSynopsis,
   updateSynopsis,
 } from '../../api/stages';
+import { playDone } from '../../utils/sound';
 import { registerStage } from '../stageRegistry';
 import ProgressBar from '../../components/ProgressBar';
 
@@ -54,6 +55,7 @@ function ThumbnailStage({ episodeId }: StageComponentProps) {
       try {
         const genResult = await generateThumbnail(episodeId);
         setThumbnailData(genResult);
+        playDone();
         setPhase('editing');
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Thumbnail generation failed');
@@ -76,6 +78,7 @@ function ThumbnailStage({ episodeId }: StageComponentProps) {
     try {
       const result = await generateThumbnail(episodeId);
       setThumbnailData(result);
+      playDone();
       setPhase('editing');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Thumbnail generation failed');
@@ -100,6 +103,7 @@ function ThumbnailStage({ episodeId }: StageComponentProps) {
       const result = await generateSynopsis(episodeId);
       setThumbnailData(result);
       setSynopsis(result.synopsis);
+      playDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Synopsis generation failed');
     } finally {

@@ -13,6 +13,17 @@ export interface ShortConfig {
   music_file: string;
   music_volume: number;
   art_style: string;
+  pause_after_question: number;
+  pause_between_items: number;
+  sentence_mode: string;
+  repeat_count: number;
+  timer_duration: number;
+  reveal_hold: number;
+  sfx_timer: string;
+  sfx_reveal: string;
+  sfx_correct: string;
+  sfx_wrong: string;
+  sfx_transition: string;
 }
 
 export interface FlashcardItem {
@@ -31,7 +42,12 @@ export interface FlashcardItem {
   tts_sentence_file: string;
   tts_answer_duration_ms: number;
   tts_sentence_duration_ms: number;
+  tts_repeat_files: string[];
+  tts_repeat_durations_ms: number[];
   tts_generated: boolean;
+  wrong_sentence_zh: string;
+  wrong_sentence_pinyin: string;
+  wrong_sentence_en: string;
 }
 
 export interface ShortState {

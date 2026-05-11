@@ -8,6 +8,11 @@ interface TTSControlsProps {
   onApprove: () => void;
   onSpeedChange: (speed: number) => void;
   generating: boolean;
+  selectedCount: number;
+  allSelectedChecked: boolean;
+  onToggleSelectAll: () => void;
+  onRevertSelected: () => void;
+  reverting: boolean;
 }
 
 export default function TTSControls({
@@ -20,6 +25,11 @@ export default function TTSControls({
   onApprove,
   onSpeedChange,
   generating,
+  selectedCount,
+  allSelectedChecked,
+  onToggleSelectAll,
+  onRevertSelected,
+  reverting,
 }: TTSControlsProps) {
   return (
     <div
@@ -49,7 +59,37 @@ export default function TTSControls({
         />
       </div>
 
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {generated > 0 && (
+          <>
+            <label
+              style={{ fontSize: 12, color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <input
+                type="checkbox"
+                checked={allSelectedChecked}
+                onChange={onToggleSelectAll}
+                style={{ accentColor: 'var(--accent)' }}
+              />
+              all
+            </label>
+            {selectedCount > 0 && (
+              <button
+                onClick={onRevertSelected}
+                disabled={reverting || generating}
+                style={{
+                  ...btnStyle,
+                  borderColor: 'var(--danger)',
+                  color: 'var(--danger)',
+                  opacity: reverting ? 0.5 : 1,
+                }}
+              >
+                {reverting ? 'reverting...' : `revert (${selectedCount})`}
+              </button>
+            )}
+          </>
+        )}
+
         <button
           onClick={onToggleMode}
           disabled={generating}

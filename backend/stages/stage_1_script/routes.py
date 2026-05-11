@@ -14,12 +14,12 @@ def _load_state(ep_id: str) -> EpisodeState:
     state_path = EPISODES_DIR / ep_id / "state.json"
     if not state_path.exists():
         raise HTTPException(404, f"Episode {ep_id} not found")
-    return EpisodeState(**json.loads(state_path.read_text()))
+    return EpisodeState(**json.loads(state_path.read_text(encoding="utf-8")))
 
 
 def _save_state(ep_id: str, state: EpisodeState) -> None:
     state_path = EPISODES_DIR / ep_id / "state.json"
-    state_path.write_text(state.model_dump_json(indent=2))
+    state_path.write_text(state.model_dump_json(indent=2), encoding="utf-8")
 
 
 class SeedRequest(BaseModel):
@@ -108,11 +108,11 @@ async def approve_script(ep_id: str):
 
     # Update episode registry with summary
     registry_path = EPISODES_DIR / "registry.json"
-    registry = json.loads(registry_path.read_text()) if registry_path.exists() else []
+    registry = json.loads(registry_path.read_text(encoding="utf-8")) if registry_path.exists() else []
     for ep in registry:
         if ep["id"] == ep_id:
             ep["summary"] = state.script.idea
             break
-    registry_path.write_text(json.dumps(registry, indent=2))
+    registry_path.write_text(json.dumps(registry, indent=2), encoding="utf-8")
 
     return {"approved": True, "current_stage": state.current_stage}

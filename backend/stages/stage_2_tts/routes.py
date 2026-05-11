@@ -16,12 +16,12 @@ def _load_state(ep_id: str) -> EpisodeState:
     state_path = EPISODES_DIR / ep_id / "state.json"
     if not state_path.exists():
         raise HTTPException(404, f"Episode {ep_id} not found")
-    return EpisodeState(**json.loads(state_path.read_text()))
+    return EpisodeState(**json.loads(state_path.read_text(encoding="utf-8")))
 
 
 def _save_state(ep_id: str, state: EpisodeState) -> None:
     state_path = EPISODES_DIR / ep_id / "state.json"
-    state_path.write_text(state.model_dump_json(indent=2))
+    state_path.write_text(state.model_dump_json(indent=2), encoding="utf-8")
 
 
 @router.post("/initialize")
@@ -136,6 +136,37 @@ async def revert(ep_id: str, line_id: str):
 
     _save_state(ep_id, state)
     return {"reverted": True, "line_id": line_id}
+
+
+class RevertSelectedRequest(BaseModel):
+    line_ids: list[str]
+
+
+@router.post("/revert-selected")
+async def revert_selected(ep_id: str, req: RevertSelectedRequest):
+    state = _load_state(ep_id)
+    script_line_ids = [l.id for l in state.script.lines]
+
+    # Validate all requested line_ids exist
+    for lid in req.line_ids:
+        if lid not in script_line_ids:
+            raise HTTPException(404, f"Line {lid} not found")
+
+    # Revert from end of script backward to maintain consistency
+    ids_to_revert = set(req.line_ids)
+    reverted = []
+    for lid in reversed(script_line_ids):
+        if lid not in ids_to_revert:
+            continue
+        revert_line_tts(state, lid)
+        for i, ls in enumerate(state.tts.line_statuses):
+            if ls.line_id == lid:
+                state.tts.line_statuses[i] = TTSLineStatus(line_id=lid)
+                break
+        reverted.append(lid)
+
+    _save_state(ep_id, state)
+    return {"reverted": reverted}
 
 
 class ModeRequest(BaseModel):

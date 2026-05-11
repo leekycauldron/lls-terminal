@@ -122,6 +122,11 @@ export async function revertTTSLine(epId: string, lineId: string) {
   return data;
 }
 
+export async function revertSelectedTTS(epId: string, lineIds: string[]): Promise<{ reverted: string[] }> {
+  const { data } = await client.post(`/episodes/${epId}/tts/revert-selected`, { line_ids: lineIds });
+  return data;
+}
+
 export async function setTTSMode(epId: string, mode: string) {
   const { data } = await client.put(`/episodes/${epId}/tts/mode`, { mode });
   return data;
